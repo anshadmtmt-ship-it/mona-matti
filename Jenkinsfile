@@ -58,5 +58,11 @@ pipeline {
                 }
             }
         }
+
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t mona-matti:${BUILD_NUMBER} .'
+            }
+        }
     }
 }
