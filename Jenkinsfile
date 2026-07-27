@@ -7,10 +7,10 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "anshadin4k/mona-matti"
-        CHART_NAME = "mona-matti"
-        CHART_PATH = "helm"
-        AWS_REGION = "eu-north-1"
-        AWS_ECR = "175690104602.dkr.ecr.eu-north-1.amazonaws.com"
+        CHART_NAME   = "mona-matti"
+        CHART_PATH   = "helm"
+        AWS_REGION   = "eu-north-1"
+        AWS_ECR      = "175690104602.dkr.ecr.eu-north-1.amazonaws.com"
     }
 
     stages {
@@ -53,22 +53,6 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
-            steps {
-                sh '''
-                    docker build -t mona-matti:${BUILD_NUMBER} .
-                '''
-            }
-        }
-
-        stage('Docker Tag') {
-            steps {
-                sh '''
-                    docker tag mona-matti:${BUILD_NUMBER} ${DOCKER_IMAGE}:${BUILD_NUMBER}
-                '''
-            }
-        }
-
         stage('Docker Login') {
             steps {
                 withCredentials([
@@ -82,6 +66,22 @@ pipeline {
                         echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
                     '''
                 }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh '''
+                    docker build -t mona-matti:${BUILD_NUMBER} .
+                '''
+            }
+        }
+
+        stage('Docker Tag') {
+            steps {
+                sh '''
+                    docker tag mona-matti:${BUILD_NUMBER} ${DOCKER_IMAGE}:${BUILD_NUMBER}
+                '''
             }
         }
 
@@ -124,7 +124,6 @@ pipeline {
             steps {
                 sh '''
                     rm -f ${CHART_NAME}-*.tgz
-
                     helm package ${CHART_PATH}
                 '''
             }
@@ -150,7 +149,7 @@ pipeline {
             steps {
                 sh '''
                     helm push ${CHART_NAME}-1.0.0.tgz \
-                    oci://${AWS_ECR}/
+                    oci://${AWS_ECR}
                 '''
             }
         }
@@ -159,7 +158,7 @@ pipeline {
     post {
         success {
             echo '========================================='
-            echo 'Build Pipeline Completed Successfully'
+            echo 'CI Pipeline Completed Successfully'
             echo "Docker Image : ${DOCKER_IMAGE}:${BUILD_NUMBER}"
             echo "Helm Chart   : ${CHART_NAME}-1.0.0.tgz"
             echo '========================================='
@@ -167,7 +166,7 @@ pipeline {
 
         failure {
             echo '========================================='
-            echo 'Build Pipeline Failed'
+            echo 'CI Pipeline Failed'
             echo '========================================='
         }
 
