@@ -45,6 +45,18 @@ pipeline {
             }
         }
 
+        stage('Docker Build') {
+            steps {
+                sh 'docker build -t mona-matti:${BUILD_NUMBER} .'
+            }
+        }
+
+        stage('Docker Tag') {
+            steps {
+                sh 'docker tag mona-matti:${BUILD_NUMBER} anshadin4k/mona-matti:${BUILD_NUMBER}'
+            }
+        }
+
         stage('Docker Login') {
             steps {
                 withCredentials([usernamePassword(
@@ -59,21 +71,15 @@ pipeline {
             }
         }
 
-        stage('Docker Build') {
-            steps {
-                sh 'docker build -t mona-matti:${BUILD_NUMBER} .'
-            }
-        }
-
-        stage('Docker Tag') {
-            steps {
-                sh 'docker tag mona-matti:${BUILD_NUMBER} anshadin4k/mona-matti:${BUILD_NUMBER}'
-            }
-        }
-
         stage('Docker Push') {
             steps {
                 sh 'docker push anshadin4k/mona-matti:${BUILD_NUMBER}'
+            }
+        }
+
+        stage('Docker Logout') {
+            steps {
+                sh 'docker logout'
             }
         }
     }
