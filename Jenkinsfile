@@ -70,5 +70,11 @@ pipeline {
                 sh 'docker tag mona-matti:${BUILD_NUMBER} anshadin4k/mona-matti:${BUILD_NUMBER}'
             }
         }
+
+        stage('Docker Push') {
+            steps {
+                sh 'docker push anshadin4k/mona-matti:${BUILD_NUMBER}'
+            }
+        }
     }
 }
