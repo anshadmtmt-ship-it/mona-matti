@@ -1,0 +1,18 @@
+# MONA MATTI — Dockerignore
+target/
+.git/
+.gitignore
+.idea/
+.vscode/
+*.iml
+*.log
+data/
+.mvn/
+mvnw
+mvnw.cmd
+README.md
+README-Docker.md
+implementation_plan.md
+walkthrough.md
+*.tmp
+.DS_Store

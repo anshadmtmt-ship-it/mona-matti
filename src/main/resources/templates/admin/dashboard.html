@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MONA MATTI — Admin CMS Dashboard</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        .admin-sidebar {
+            background-color: #1e293b;
+            min-height: 100vh;
+            border-right: 1px solid #334155;
+        }
+        .card-dark {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            color: #f8fafc;
+        }
+        .nav-link-admin {
+            color: #94a3b8;
+            border-radius: 8px;
+            padding: 10px 16px;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .nav-link-admin:hover, .nav-link-admin.active {
+            background-color: #3b82f6;
+            color: #ffffff;
+        }
+        .table-dark-custom {
+            color: #e2e8f0;
+            --bs-table-bg: #1e293b;
+            --bs-table-border-color: #334155;
+        }
+        .form-control-dark {
+            background-color: #0f172a;
+            border: 1px solid #334155;
+            color: #f8fafc;
+        }
+        .form-control-dark:focus {
+            background-color: #0f172a;
+            border-color: #3b82f6;
+            color: #ffffff;
+            box-shadow: 0 0 0 0.25rem rgba(59, 130, 246, 0.25);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container-fluid">
+        <div class="row">
+            
+            <!-- Sidebar -->
+            <aside class="col-md-3 col-lg-2 p-3 admin-sidebar">
+                <div class="d-flex align-items-center gap-2 mb-4 pb-3 border-bottom border-secondary">
+                    <i class="bi bi-pencil-square text-primary fs-3"></i>
+                    <div>
+                        <h5 class="m-0 fw-bold">MONA MATTI</h5>
+                        <small class="text-secondary">Admin CMS Dashboard</small>
+                    </div>
+                </div>
+
+                <nav class="nav flex-column gap-2">
+                    <a href="#dashboard-tab" class="nav-link-admin active" data-bs-toggle="pill">
+                        <i class="bi bi-speedometer2"></i> Dashboard
+                    </a>
+                    <a href="#hero-tab" class="nav-link-admin" data-bs-toggle="pill">
+                        <i class="bi bi-house"></i> Hero Section
+                    </a>
+                    <a href="#product-tab" class="nav-link-admin" data-bs-toggle="pill">
+                        <i class="bi bi-pencil-square"></i> Product Details
+                    </a>
+                    <a href="/admin/reservations" class="nav-link-admin">
+                        <i class="bi bi-journal-bookmark-fill"></i> Reservations
+                    </a>
+                    <hr class="border-secondary my-3">
+                    <a href="/" target="_blank" class="nav-link-admin text-info">
+                        <i class="bi bi-box-arrow-up-right"></i> View Live Site
+                    </a>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="col-md-9 col-lg-10 p-4">
+                
+                <!-- Header Bar -->
+                <header class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom border-secondary">
+                    <div>
+                        <h3 class="m-0 fw-bold">Content Management Console</h3>
+                        <small class="text-secondary">MONA MATTI — Spring Boot CMS</small>
+                    </div>
+                    <div>
+                        <span class="badge bg-success-subtle text-success px-3 py-2 border border-success">
+                            <i class="bi bi-database-check me-1"></i> Database Connected
+                        </span>
+                    </div>
+                </header>
+
+                <!-- Notifications -->
+                <div th:if="${successMessage}" class="alert alert-success bg-success-subtle text-success border-success alert-dismissible fade show">
+                    <i class="bi bi-check-circle-fill me-2"></i> <span th:text="${successMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                <div th:if="${errorMessage}" class="alert alert-danger bg-danger-subtle text-danger border-danger alert-dismissible fade show">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i> <span th:text="${errorMessage}"></span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+
+                <div class="tab-content">
+                    
+                    <!-- TAB 1: DASHBOARD -->
+                    <div class="tab-pane fade show active" id="dashboard-tab">
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3 col-6">
+                                <div class="card-dark p-3">
+                                    <small class="text-secondary fw-bold">PRODUCT NAME</small>
+                                    <h4 class="fw-bold text-warning m-0 mt-1" th:text="${product != null ? product.name : 'MONA MATTI Pencil'}">MONA MATTI Pencil</h4>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="card-dark p-3">
+                                    <small class="text-secondary fw-bold">CURRENT PRICE</small>
+                                    <h4 class="fw-bold text-white m-0 mt-1" th:text="${product != null ? '$' + product.price : '$49.99'}">$49.99</h4>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="card-dark p-3">
+                                    <small class="text-secondary fw-bold">STOCK STATUS</small>
+                                    <h4 class="fw-bold text-success m-0 mt-1" th:text="${product != null ? product.stockStatus : 'IN STOCK'}">IN STOCK</h4>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <div class="card-dark p-3">
+                                    <small class="text-secondary fw-bold">LAST UPDATED</small>
+                                    <h4 class="fw-bold text-info m-0 mt-1" th:text="${product != null &amp;&amp; product.updatedAt != null ? #temporals.format(product.updatedAt, 'yyyy-MM-dd HH:mm') : 'Today'}">Today</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- TAB 2: HERO SECTION -->
+                    <div class="tab-pane fade" id="hero-tab">
+                        <div class="card-dark p-4 mb-4">
+                            <h4 class="fw-bold mb-3"><i class="bi bi-house text-primary me-2"></i> Hero Section</h4>
+                            <form th:action="@{/admin/product/save}" th:object="${product}" method="post">
+                                <input type="hidden" th:field="*{id}" />
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <label class="form-label text-secondary small">Hero Title</label>
+                                        <input type="text" th:field="*{heroTitle}" class="form-control form-control-dark" required>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label text-secondary small">Hero Subtitle</label>
+                                        <textarea th:field="*{heroSubtitle}" class="form-control form-control-dark" rows="2"></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-secondary small">Button Text</label>
+                                        <input type="text" value="ORDER NOW" class="form-control form-control-dark">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-secondary small">Button Link</label>
+                                        <input type="text" value="#product" class="form-control form-control-dark">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label text-secondary small">Hero Pencil Model</label>
+                                        <input type="text" th:field="*{mainImage}" class="form-control form-control-dark">
+                                    </div>
+                                    <div class="col-12 text-end">
+                                        <button type="submit" class="btn btn-primary px-4"><i class="bi bi-save me-1"></i> Save Hero Changes</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- TAB 3: PRODUCT DETAILS & TECHNICAL SPECIFICATIONS -->
+                    <div class="tab-pane fade" id="product-tab">
+                        <div class="card-dark p-4 mb-4">
+                            <h4 class="fw-bold mb-3"><i class="bi bi-pencil-square text-primary me-2"></i> Product Details</h4>
+                            <form th:action="@{/admin/product/save}" th:object="${product}" method="post">
+                                <input type="hidden" th:field="*{id}" />
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-secondary small">Product Name</label>
+                                        <input type="text" th:field="*{name}" class="form-control form-control-dark" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-secondary small">Price ($)</label>
+                                        <input type="number" step="0.01" th:field="*{price}" class="form-control form-control-dark" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-secondary small">Stock Status</label>
+                                        <select th:field="*{stockStatus}" class="form-control form-control-dark">
+                                            <option value="IN STOCK">IN STOCK</option>
+                                            <option value="LIMITED EDITION">LIMITED EDITION</option>
+                                            <option value="PRE-ORDER">PRE-ORDER</option>
+                                            <option value="OUT OF STOCK">OUT OF STOCK</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-secondary small">Buy Button Text</label>
+                                        <input type="text" value="ORDER NOW" class="form-control form-control-dark">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label text-secondary small">Description</label>
+                                        <textarea th:field="*{description}" class="form-control form-control-dark" rows="3"></textarea>
+                                    </div>
+                                </div>
+
+                                <h5 class="fw-bold mt-4 pt-3 border-top border-secondary text-primary"><i class="bi bi-box-seam me-2"></i> Technical Specifications</h5>
+                                <div class="row g-3 mt-1">
+                                    <div class="col-md-6">
+                                        <label class="form-label text-secondary small">Material</label>
+                                        <input type="text" value="Anodized Aluminium &amp; Brass" class="form-control form-control-dark">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-secondary small">Length</label>
+                                        <input type="text" value="140mm Barrel" class="form-control form-control-dark">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-secondary small">Weight</label>
+                                        <input type="text" value="28g" class="form-control form-control-dark">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-secondary small">Colour</label>
+                                        <input type="text" value="Matte Black &amp; Brushed Brass" class="form-control form-control-dark">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-secondary small">Nib Size</label>
+                                        <input type="text" value="0.7mm HB Lead" class="form-control form-control-dark">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-secondary small">Number of Internal Nibs</label>
+                                        <input type="text" value="5 Lead Nibs" class="form-control form-control-dark">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label text-secondary small">Replaceable</label>
+                                        <select class="form-control form-control-dark">
+                                            <option value="Yes">Yes</option>
+                                            <option value="No">No</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label text-secondary small">Additional Specifications</label>
+                                        <textarea class="form-control form-control-dark" rows="2">Zero sharpening required. Universal refill cartridge compatible.</textarea>
+                                    </div>
+                                    <div class="col-12 text-end">
+                                        <button type="submit" class="btn btn-primary px-4"><i class="bi bi-save me-1"></i> Save Product Details &amp; Specs</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

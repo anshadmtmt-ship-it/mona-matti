@@ -1,0 +1,43 @@
+# Target build directory
+target/
+*.jar
+*.war
+*.ear
+*.rar
+
+# IDE & Editor files
+.idea/
+*.iml
+.vscode/
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+
+# Compiled class files
+*.class
+*.log
+*.swp
+*.bak
+*.tmp
+*~
+
+# Environment & Secret files
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.p12
+
+# Node / Frontend / Coverage artifacts
+node_modules/
+coverage/
+out/
+.DS_Store
+Thumbs.db
+
+# Embedded H2 Database files
+data/
+*.db

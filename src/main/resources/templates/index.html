@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MONA MATTI — One Pencil. Infinite Possibilities.</title>
+    <meta name="description" content="MONA MATTI — A premium multi-nib graphite pencil for designers, artists and creators. Zero sharpening. Infinite possibilities.">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=Caveat:wght@500;600;700&family=Kalam:wght@400;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" th:href="@{/css/style.css}" href="/css/style.css">
+</head>
+<body>
+
+<!-- Fixed Viewport Canvas Overlay for Continuous Scroll Drawing -->
+<canvas id="graphite-canvas" class="graphite-canvas"></canvas>
+
+<!-- Overlay mask for sticky note click transition -->
+<div id="sticky-paper-darken" class="sticky-paper-darken"></div>
+
+<!-- ======================================================================
+     SKETCHBOOK CANVAS — ONE CONTINUOUS A4 ARCHITECT SHEET
+     ====================================================================== -->
+<main class="sketchbook-canvas">
+
+    <article class="sketchbook-sheet" id="sketchbook-sheet">
+
+        <div class="sheet-inner">
+
+            <!-- ============================================================
+                 PAPER HEADER — PRINTED DIRECTLY ON THE PAPER SHEET
+                 Normal document flow: Logo on left, Navigation on right.
+                 ============================================================ -->
+            <header class="paper-header">
+                <!-- Brand block -->
+                <div class="brand-block reveal">
+                    <div class="brand-crown">
+                        <svg width="32" height="22" viewBox="0 0 32 22" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+                            <path d="M2 18 L4 8 L10 14 L16 3 L22 14 L28 8 L30 18 Z" stroke-linecap="round" stroke-linejoin="round" opacity="0.6"/>
+                            <circle cx="4"  cy="7" r="1.2" fill="currentColor" opacity="0.5"/>
+                            <circle cx="16" cy="2" r="1.2" fill="currentColor" opacity="0.5"/>
+                            <circle cx="28" cy="7" r="1.2" fill="currentColor" opacity="0.5"/>
+                        </svg>
+                    </div>
+                    <h1 class="brand-name" id="display-brand-name">MONA MATTI</h1>
+                    <p  class="brand-tagline" id="display-tagline">Every line starts with an idea.</p>
+                </div>
+
+                <!-- Handwritten Paper Navigation -->
+                <nav class="paper-nav" aria-label="Main Navigation">
+                    <a href="#home"    class="paper-nav-link active" id="nav-home">HOME</a>
+                    <a href="#product" class="paper-nav-link"        id="nav-product">PRODUCT</a>
+                </nav>
+            </header>
+
+            <!-- ============================================================
+                 01 — HERO
+                 ============================================================ -->
+            <section id="home" class="sheet-section">
+
+                <!-- Hero split -->
+                <div class="hero-row">
+                    <!-- Left: headline + CTA -->
+                    <div class="reveal reveal-delay-1">
+                        <h2 class="t-hero mb-3" id="display-hero-title"
+                            th:text="${product != null ? product.heroTitle : 'One Pencil. Infinite Possibilities.'}">
+                            One Pencil.<br>Infinite Possibilities.
+                        </h2>
+                        <p class="t-handscript mb-4" id="display-hero-subtitle"
+                           th:text="${product != null ? product.heroSubtitle : 'Replace the nib. Refresh the idea. Create without limits.'}">
+                            Replace the nib.<br>Refresh the idea.<br>Create without limits.
+                        </p>
+                        <div class="d-flex flex-wrap gap-3 align-items-center">
+                            <button class="btn-solid" id="btn-reserve" onclick="openReserveModal()" type="button">
+                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                                </svg>
+                                <span>RESERVE YOUR EDITION</span> — $<span id="display-price" th:text="${product != null ? product.price : '49.99'}">49.99</span>
+                            </button>
+                            <button class="btn-outline" id="btn-demo">
+                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <polygon points="10 8 16 12 10 16 10 8" fill="currentColor"/>
+                                </svg>
+                                <span id="display-btn-demo-text">WATCH DEMO</span>
+                            </button>
+                            <span class="badge bg-secondary rounded-pill px-3 py-2" id="display-stock-status" style="font-size:0.75rem; letter-spacing:1px;">IN STOCK</span>
+                        </div>
+                    </div>
+
+                    <!-- Right: full pencil product hero + annotations -->
+                    <div class="hero-pencil-zone reveal reveal-delay-2">
+                        <div class="annotation ann-push">
+                            <div class="annotation-line left"></div>
+                            <div class="annotation-text">Push.<br>Click.<br>Create.</div>
+                        </div>
+                        <div class="annotation ann-body">
+                            <div class="annotation-line left"></div>
+                            <div class="annotation-text">Aluminium<br>Body</div>
+                        </div>
+                        <div class="annotation ann-nib">
+                            <div class="annotation-line left"></div>
+                            <div class="annotation-text">Multi Nib<br>System</div>
+                        </div>
+                        <div class="annotation ann-tip">
+                            <div class="annotation-line left"></div>
+                            <div class="annotation-text">Precision<br>Every Time</div>
+                        </div>
+
+                        <!-- Product Pencil SVG -->
+                        <svg class="hero-pencil-svg" id="hero-pencil" viewBox="0 0 260 680" xmlns="http://www.w3.org/2000/svg" aria-label="MONA MATTI graphite pencil illustration">
+                            <defs>
+                                <!-- Matte Black Aluminium Cylinder Gradient -->
+                                <linearGradient id="hbBodyMatte" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%"   stop-color="#141312"/>
+                                    <stop offset="10%"  stop-color="#242220"/>
+                                    <stop offset="24%"  stop-color="#3c3834"/>
+                                    <stop offset="38%"  stop-color="#2d2a27"/>
+                                    <stop offset="60%"  stop-color="#1d1c1a"/>
+                                    <stop offset="85%"  stop-color="#161514"/>
+                                    <stop offset="100%" stop-color="#0c0b0a"/>
+                                </linearGradient>
+
+                                <!-- Brushed Aluminium High Specular Reflection -->
+                                <linearGradient id="hbHighSheen" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%"   stop-color="rgba(255,255,255,0)"/>
+                                    <stop offset="35%"  stop-color="rgba(255,255,255,0.16)"/>
+                                    <stop offset="60%"  stop-color="rgba(255,255,255,0)"/>
+                                    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+                                </linearGradient>
+
+                                <!-- Premium Brushed Brass Cap Gradient -->
+                                <linearGradient id="hbBrassCap" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%"   stop-color="#634c1f"/>
+                                    <stop offset="15%"  stop-color="#a88232"/>
+                                    <stop offset="35%"  stop-color="#e8c465"/>
+                                    <stop offset="50%"  stop-color="#fbf0b8"/>
+                                    <stop offset="65%"  stop-color="#dcae44"/>
+                                    <stop offset="85%"  stop-color="#967126"/>
+                                    <stop offset="100%" stop-color="#4d3914"/>
+                                </linearGradient>
+
+                                <!-- Brass Connector Ring Gradient -->
+                                <linearGradient id="hbBrassRing" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%"   stop-color="#574219"/>
+                                    <stop offset="25%"  stop-color="#bd943c"/>
+                                    <stop offset="50%"  stop-color="#f5dc8c"/>
+                                    <stop offset="75%"  stop-color="#b58d35"/>
+                                    <stop offset="100%" stop-color="#4a3713"/>
+                                </linearGradient>
+
+                                <!-- Brass Tapered Cone Gradient -->
+                                <linearGradient id="hbBrassCone" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%"   stop-color="#5e461b"/>
+                                    <stop offset="20%"  stop-color="#a37d2f"/>
+                                    <stop offset="42%"  stop-color="#ebd07d"/>
+                                    <stop offset="65%"  stop-color="#d2a43e"/>
+                                    <stop offset="85%"  stop-color="#8c6823"/>
+                                    <stop offset="100%" stop-color="#453312"/>
+                                </linearGradient>
+
+                                <!-- High-Contrast Laser Engraved Metallic Gold Gradient (#D4AF37) -->
+                                <linearGradient id="goldLaserGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%"   stop-color="#8a6721"/>
+                                    <stop offset="18%"  stop-color="#dcae44"/>
+                                    <stop offset="40%"  stop-color="#fff6cf"/>
+                                    <stop offset="65%"  stop-color="#D4AF37"/>
+                                    <stop offset="85%"  stop-color="#ab842c"/>
+                                    <stop offset="100%" stop-color="#694d14"/>
+                                </linearGradient>
+
+                                <!-- Sharp Graphite Carbon Tip Gradient -->
+                                <linearGradient id="hbGraphiteTip" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%"   stop-color="#3d3b38"/>
+                                    <stop offset="40%"  stop-color="#242220"/>
+                                    <stop offset="80%"  stop-color="#121110"/>
+                                    <stop offset="100%" stop-color="#050504"/>
+                                </linearGradient>
+
+                                <!-- Laser Engraved Inset & Bevel Edge Filter (High Resolution Crispness) -->
+                                <filter id="goldLaserEngrave" x="-30%" y="-30%" width="160%" height="160%">
+                                    <feDropShadow dx="0" dy="1.2" stdDeviation="0.2" flood-color="#000000" flood-opacity="0.95"/>
+                                    <feDropShadow dx="0" dy="-0.8" stdDeviation="0.2" flood-color="#ffffff" flood-opacity="0.55"/>
+                                </filter>
+
+                                <!-- Soft Ambient & Contact Drop Shadow on Paper -->
+                                <filter id="heroPencilShadow" x="-60%" y="-20%" width="220%" height="140%">
+                                    <feGaussianBlur in="SourceAlpha" stdDeviation="16" result="blur1"/>
+                                    <feOffset dx="12" dy="18" result="offset1"/>
+                                    <feComponentTransfer in="offset1" result="shadow1">
+                                        <feFuncA type="linear" slope="0.28"/>
+                                    </feComponentTransfer>
+                                    <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur2"/>
+                                    <feOffset dx="4" dy="5" result="offset2"/>
+                                    <feComponentTransfer in="offset2" result="shadow2">
+                                        <feFuncA type="linear" slope="0.35"/>
+                                    </feComponentTransfer>
+                                    <feMerge>
+                                        <feMergeNode in="shadow1"/>
+                                        <feMergeNode in="shadow2"/>
+                                        <feMergeNode in="SourceGraphic"/>
+                                    </feMerge>
+                                </filter>
+                            </defs>
+
+                            <g filter="url(#heroPencilShadow)">
+                                <!-- Top Brass Push Button (Knurled Cap) -->
+                                <rect x="95" y="10" width="70" height="40" rx="5" fill="url(#hbBrassCap)"/>
+                                <rect x="99" y="14" width="62" height="32" rx="3" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1"/>
+                                <!-- Fine Knurling Rib Lines -->
+                                <line x1="107" y1="12" x2="107" y2="48" stroke="rgba(40,25,5,0.35)" stroke-width="1"/>
+                                <line x1="108" y1="12" x2="108" y2="48" stroke="rgba(255,245,200,0.3)" stroke-width="1"/>
+                                <line x1="117" y1="12" x2="117" y2="48" stroke="rgba(40,25,5,0.35)" stroke-width="1"/>
+                                <line x1="118" y1="12" x2="118" y2="48" stroke="rgba(255,245,200,0.3)" stroke-width="1"/>
+                                <line x1="127" y1="12" x2="127" y2="48" stroke="rgba(40,25,5,0.35)" stroke-width="1"/>
+                                <line x1="128" y1="12" x2="128" y2="48" stroke="rgba(255,245,200,0.3)" stroke-width="1"/>
+                                <line x1="137" y1="12" x2="137" y2="48" stroke="rgba(40,25,5,0.35)" stroke-width="1"/>
+                                <line x1="138" y1="12" x2="138" y2="48" stroke="rgba(255,245,200,0.3)" stroke-width="1"/>
+                                <line x1="147" y1="12" x2="147" y2="48" stroke="rgba(40,25,5,0.35)" stroke-width="1"/>
+                                <line x1="148" y1="12" x2="148" y2="48" stroke="rgba(255,245,200,0.3)" stroke-width="1"/>
+                                <line x1="153" y1="12" x2="153" y2="48" stroke="rgba(40,25,5,0.35)" stroke-width="1"/>
+
+                                <!-- Brass Top Connector Ring -->
+                                <rect x="91" y="48" width="78" height="14" rx="2" fill="url(#hbBrassRing)"/>
+                                <line x1="91" y1="55" x2="169" y2="55" stroke="rgba(40,25,5,0.4)" stroke-width="1"/>
+
+                                <!-- Main Matte Black Aluminium Body -->
+                                <rect x="93" y="62" width="74" height="410" fill="url(#hbBodyMatte)"/>
+                                <!-- Cylindrical Specular Sheen Stripe -->
+                                <rect x="105" y="62" width="12" height="410" fill="url(#hbHighSheen)"/>
+                                <!-- Left Bevel Edge Highlight -->
+                                <line x1="94" y1="62" x2="94" y2="472" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+
+                                <!-- Laser Engraved Metallic Gold Brand Logo (Rotated 90° Vertical, High Resolution Vector) -->
+                                <g transform="rotate(-90, 130, 267)" filter="url(#goldLaserEngrave)">
+                                    <text x="130" y="267"
+                                          font-family="'Outfit', 'Cormorant Garamond', sans-serif"
+                                          font-weight="800"
+                                          font-size="17"
+                                          letter-spacing="8.5"
+                                          fill="url(#goldLaserGradient)"
+                                          text-anchor="middle"
+                                          dominant-baseline="central"
+                                          text-rendering="geometricPrecision"
+                                          id="pencil-svg-brand"
+                                          >MONA MATTI</text>
+                                </g>
+
+                                <!-- Lower Brass Connector Ring -->
+                                <rect x="91" y="472" width="78" height="16" rx="2" fill="url(#hbBrassRing)"/>
+                                <line x1="91" y1="480" x2="169" y2="480" stroke="rgba(40,25,5,0.4)" stroke-width="1"/>
+
+                                <!-- Precision Brushed Brass Cone -->
+                                <path d="M 93,488 C 88,520 106,558 117,578 L 130,600 L 143,578 C 154,558 172,520 167,488 Z" fill="url(#hbBrassCone)"/>
+                                <!-- Machine Rings on Brass Cone -->
+                                <path d="M 98,510 Q 130,518 162,510" fill="none" stroke="rgba(60,40,10,0.35)" stroke-width="1"/>
+                                <path d="M 104,534 Q 130,541 156,534" fill="none" stroke="rgba(60,40,10,0.35)" stroke-width="1"/>
+
+                                <!-- Brass Nib Holder Base -->
+                                <rect x="117" y="574" width="26" height="12" rx="1" fill="url(#hbBrassCap)"/>
+
+                                <!-- Sharper Carbon Graphite Tip -->
+                                <path d="M 120,586 L 130,628 L 140,586 Q 135,584 130,584 Q 125,584 120,586 Z" fill="url(#hbGraphiteTip)"/>
+                                <!-- Sharp Tip Apex Sheen -->
+                                <path d="M 127,615 L 130,628 L 133,615 Z" fill="#050504"/>
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+
+                </section>
+
+            <!-- ============================================================
+                 02 — PRODUCT SHOWCASE & EXPLODED VIEW
+                 ============================================================ -->
+            <section id="product" class="sheet-section">
+                <div class="chapter-label reveal">02 / PRODUCT SHOWCASE</div>
+                <div class="product-row" id="specs">
+                    <div class="reveal reveal-delay-1">
+                        <h2 class="t-section-headline mb-3" id="display-product-name">MONA MATTI Pencil</h2>
+                        <p class="t-handscript mb-4" id="display-product-desc">One tool.<br>Many ideas.<br>Zero limits.</p>
+                        <ul class="product-specs-list">
+                            <li class="product-spec-item">
+                                <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+                                <div><span class="spec-title">Material</span><span class="spec-desc" id="display-spec-material">Anodized Aluminium &amp; Brass</span></div>
+                            </li>
+                            <li class="product-spec-item">
+                                <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M6.34 17.66l-1.41 1.41M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M12 1v3M12 20v3M1 12h3M20 12h3"/></svg>
+                                <div><span class="spec-title">Nib System</span><span class="spec-desc" id="display-spec-nib">5 × 0.7mm HB Lead Nibs</span></div>
+                            </li>
+                            <li class="product-spec-item">
+                                <svg class="spec-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                                <div><span class="spec-title">Weight &amp; Length</span><span class="spec-desc" id="display-spec-weight">28g · 140mm Barrel</span></div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="exploded-pencil-zone reveal reveal-delay-2">
+                        <svg viewBox="0 0 680 160" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="expBody" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%"   stop-color="#4a4642"/>
+                                    <stop offset="40%"  stop-color="#2c2926"/>
+                                    <stop offset="100%" stop-color="#1a1816"/>
+                                </linearGradient>
+                                <linearGradient id="expBrass" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%"   stop-color="#d4a848"/>
+                                    <stop offset="50%"  stop-color="#f0cc6a"/>
+                                    <stop offset="100%" stop-color="#c09040"/>
+                                </linearGradient>
+                                <filter id="expShadow"><feDropShadow dx="0" dy="6" stdDeviation="8" flood-opacity="0.18"/></filter>
+                            </defs>
+                            <g filter="url(#expShadow)">
+                                <rect x="18" y="55" width="52"  height="50" rx="6" fill="url(#expBrass)"/>
+                                <rect x="22" y="59" width="5"   height="42" fill="rgba(255,255,255,0.15)" rx="1"/>
+                                <line x1="74" y1="80" x2="96" y2="80" stroke="#9e9790" stroke-width="1.5" stroke-dasharray="4 3"/>
+                                <rect x="96"  y="48" width="440" height="64" rx="3" fill="url(#expBody)"/>
+                                <rect x="100" y="52" width="6"   height="56" fill="rgba(255,255,255,0.06)" rx="1"/>
+                                <text x="316" y="85" font-family="'Outfit',sans-serif" font-weight="700" font-size="10" letter-spacing="5" fill="#d4a848" text-anchor="middle"
+                                      >MONA MATTI · NIB SYSTEM</text>
+                                <rect x="532" y="50" width="20" height="60" fill="url(#expBrass)"/>
+                                <polygon points="552,50 612,80 552,110" fill="#c8a050"/>
+                                <polygon points="580,72 612,80 580,88" fill="#8a6828"/>
+                                <line x1="618" y1="80" x2="638" y2="80" stroke="#9e9790" stroke-width="1.5" stroke-dasharray="4 3"/>
+                                <ellipse cx="652" cy="80" rx="16" ry="6" fill="#3c3a38"/>
+                                <ellipse cx="668" cy="80" rx="5"  ry="3.5" fill="#0a0908"/>
+                            </g>
+                            <line x1="96"  y1="124" x2="536" y2="124" stroke="#c8c2b8" stroke-width="0.8"/>
+                            <line x1="96"  y1="120" x2="96"  y2="128" stroke="#c8c2b8" stroke-width="0.8"/>
+                            <line x1="536" y1="120" x2="536" y2="128" stroke="#c8c2b8" stroke-width="0.8"/>
+                            <text x="316" y="140" font-family="'Caveat',cursive" font-size="11" fill="#9e9790" text-anchor="middle">140mm precision barrel</text>
+                            <text x="316" y="32"  font-family="'Caveat',cursive" font-size="12" fill="#5a5450" text-anchor="middle">5 × 0.7mm HB artist-grade nibs stored inside</text>
+                            <line x1="316" y1="36" x2="316" y2="46" stroke="#c8c2b8" stroke-width="0.8" stroke-dasharray="3 2"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <!-- Yellow Sticky Note — Decorative notebook element -->
+                <div class="d-flex justify-content-end mt-4 pt-3">
+                    <div class="sticky-note reveal reveal-delay-2">
+                        <p class="sticky-note-text">Ideas<br>don't wait.<br><strong>Create.</strong></p>
+                        <svg width="28" height="22" viewBox="0 0 32 22" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-top:12px;opacity:0.45;" aria-hidden="true">
+                            <path d="M2 18 L4 8 L10 14 L16 3 L22 14 L28 8 L30 18 Z" stroke-linecap="round" stroke-linejoin="round"/>
+                            <circle cx="4" cy="7" r="1" fill="currentColor"/><circle cx="16" cy="2" r="1" fill="currentColor"/><circle cx="28" cy="7" r="1" fill="currentColor"/>
+                        </svg>
+                    </div>
+                </div>
+            </section>
+
+        </div><!-- /sheet-inner -->
+
+        <footer class="sheet-footer">
+            <span class="footer-brand">MONA MATTI</span>
+            <span class="footer-caption">Crafted for perfection
+                <svg viewBox="0 0 32 10" width="32" height="10" aria-hidden="true">
+                    <line x1="2" y1="5" x2="26" y2="5" stroke="rgba(255,255,255,0.4)" stroke-width="4" stroke-linecap="round"/>
+                    <polygon points="26,3 30,5 26,7" fill="rgba(198,160,82,0.7)"/>
+                </svg>
+            </span>
+            <span class="footer-copy" id="display-footer-copy">© 2026 MONA MATTI. Dynamic Spring Boot.</span>
+        </footer>
+    </article>
+
+</main>
+
+<!-- Mechanism Demo Modal -->
+<div class="modal fade" id="demoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content demo-modal-content p-0">
+            <div class="modal-header border-bottom" style="border-color:rgba(100,90,80,0.15)!important;">
+                <h5 class="modal-title t-serif" style="font-size:1.3rem;">MONA MATTI — Mechanism Demo</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="t-handscript text-center mb-4">No sharpening. No waste. No interruption.</p>
+                <div class="row g-3">
+                    <div class="col-3 text-center"><div class="p-3 border border-dashed rounded"><div class="t-label mb-1">STEP 1</div><strong style="font-family:var(--font-sans);font-size:.85rem;">PUSH</strong><p class="t-handscript mt-1 mb-0" style="font-size:.85rem;">Press the brass top cap.</p></div></div>
+                    <div class="col-3 text-center"><div class="p-3 border border-dashed rounded"><div class="t-label mb-1">STEP 2</div><strong style="font-family:var(--font-sans);font-size:.85rem;">POP OUT</strong><p class="t-handscript mt-1 mb-0" style="font-size:.85rem;">Spent nib exits front.</p></div></div>
+                    <div class="col-3 text-center"><div class="p-3 border border-dashed rounded"><div class="t-label mb-1">STEP 3</div><strong style="font-family:var(--font-sans);font-size:.85rem;">INSERT</strong><p class="t-handscript mt-1 mb-0" style="font-size:.85rem;">Place it in the rear.</p></div></div>
+                    <div class="col-3 text-center"><div class="p-3 border border-dashed rounded"><div class="t-label mb-1">STEP 4</div><strong style="font-family:var(--font-sans);font-size:.85rem;">SHARP NIB</strong><p class="t-handscript mt-1 mb-0" style="font-size:.85rem;">Fresh tip, instantly.</p></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ======================================================================
+     SECRET ADMIN PANEL — FLOATING MODERN DARK GRAPHITE CMS CONSOLE
+     Sole Entrance: Click Yellow Sticky Note at bottom-right of Contact
+     ====================================================================== -->
+<div class="cms-modal-backdrop" id="cms-backdrop" style="display:none;">
+    <div class="cms-window" id="cms-window">
+
+        <!-- CMS Header -->
+        <header class="cms-header">
+            <div class="cms-header-brand">
+                <svg width="22" height="18" viewBox="0 0 32 22" fill="none" stroke="#D4AF37" stroke-width="2" aria-hidden="true">
+                    <path d="M2 18 L4 8 L10 14 L16 3 L22 14 L28 8 L30 18 Z" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span class="cms-title">MONA MATTI CMS</span>
+                <span class="cms-badge">Developer Mode</span>
+            </div>
+            <button class="cms-close-btn" id="cms-close-btn" aria-label="Close CMS Console">✕</button>
+        </header>
+
+        <!-- CMS Body: Sidebar + Main Workspace -->
+        <div class="cms-body">
+
+            <!-- Sidebar Navigation -->
+            <nav class="cms-sidebar">
+                <button class="cms-tab-btn active" data-tab="tab-dashboard">
+                    <span>📊</span> Dashboard
+                </button>
+                <button class="cms-tab-btn" data-tab="tab-hero">
+                    <span>🏠</span> Hero Section
+                </button>
+                <button class="cms-tab-btn" data-tab="tab-product">
+                    <span>✏️</span> Product Details
+                </button>
+            </nav>
+
+            <!-- Main Content Area -->
+            <main class="cms-content">
+
+                <!-- 1. DASHBOARD TAB -->
+                <div class="cms-pane active" id="tab-dashboard">
+                    <h3 class="cms-pane-title">Dashboard</h3>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-3 col-6">
+                            <div class="cms-card p-3">
+                                <span class="cms-label">PRODUCT NAME</span>
+                                <div class="cms-stat-val text-gold" id="dash-prod-name">MONA MATTI Pencil</div>
+                                <span class="cms-subtext">Active Product</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="cms-card p-3">
+                                <span class="cms-label">CURRENT PRICE</span>
+                                <div class="cms-stat-val text-white" id="dash-price">$49.99</div>
+                                <span class="cms-subtext">USD</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="cms-card p-3">
+                                <span class="cms-label">STOCK STATUS</span>
+                                <div class="cms-stat-val text-success" id="dash-stock">IN STOCK</div>
+                                <span class="cms-subtext">Inventory Status</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="cms-card p-3">
+                                <span class="cms-label">LAST UPDATED</span>
+                                <div class="cms-stat-val text-light" id="dash-updated" style="font-size:1.05rem;">Just Now</div>
+                                <span class="cms-subtext">CMS Session</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. HERO SECTION TAB -->
+                <div class="cms-pane" id="tab-hero">
+                    <h3 class="cms-pane-title">Hero Section</h3>
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="cms-form-label">Hero Title</label>
+                            <input type="text" class="cms-input" id="cms-hero-title" value="One Pencil. Infinite Possibilities.">
+                        </div>
+                        <div class="col-12">
+                            <label class="cms-form-label">Hero Subtitle</label>
+                            <textarea class="cms-input" id="cms-hero-subtitle" rows="2">Replace the nib. Refresh the idea. Create without limits.</textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="cms-form-label">Button Text</label>
+                            <input type="text" class="cms-input" id="cms-btn-text" value="ORDER NOW">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="cms-form-label">Button Link</label>
+                            <input type="text" class="cms-input" id="cms-btn-link" value="#product">
+                        </div>
+                        <div class="col-12">
+                            <label class="cms-form-label">Hero Pencil Image / Model</label>
+                            <input type="text" class="cms-input" id="cms-hero-pencil-image" value="Hero SVG Precision Model (Interactive 3D)">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. PRODUCT DETAILS TAB (INCLUDES TECHNICAL SPECIFICATIONS) -->
+                <div class="cms-pane" id="tab-product">
+                    <h3 class="cms-pane-title">Product Details</h3>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="cms-form-label">Product Name</label>
+                            <input type="text" class="cms-input" id="cms-product-name" value="MONA MATTI Pencil">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="cms-form-label">Price ($)</label>
+                            <input type="text" class="cms-input" id="cms-price" value="49.99">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="cms-form-label">Stock Status</label>
+                            <select class="cms-input" id="cms-stock-status">
+                                <option value="IN STOCK">IN STOCK</option>
+                                <option value="LIMITED EDITION">LIMITED EDITION</option>
+                                <option value="PRE-ORDER">PRE-ORDER</option>
+                                <option value="OUT OF STOCK">OUT OF STOCK</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="cms-form-label">Buy Button Text</label>
+                            <input type="text" class="cms-input" id="cms-buy-btn-text" value="ORDER NOW">
+                        </div>
+                        <div class="col-12">
+                            <label class="cms-form-label">Short Description</label>
+                            <input type="text" class="cms-input" id="cms-product-short-desc" value="One tool. Many ideas. Zero limits.">
+                        </div>
+                        <div class="col-12">
+                            <label class="cms-form-label">Long Description</label>
+                            <textarea class="cms-input" id="cms-product-long-desc" rows="2">Anodized matte aluminum body with 5 interlocking 0.7mm HB artist-grade graphite nibs and a heavy-duty brass push mechanism.</textarea>
+                        </div>
+                    </div>
+
+                    <h4 class="cms-pane-title mt-4 pt-3 border-top border-secondary" style="font-size:1.1rem; color:#D4AF37;">Technical Specifications</h4>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="cms-form-label">Material</label>
+                            <input type="text" class="cms-input" id="cms-spec-material" value="Anodized Aluminium &amp; Brass">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="cms-form-label">Length</label>
+                            <input type="text" class="cms-input" id="cms-spec-length" value="140mm Barrel">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="cms-form-label">Weight</label>
+                            <input type="text" class="cms-input" id="cms-spec-weight" value="28g">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="cms-form-label">Colour</label>
+                            <input type="text" class="cms-input" id="cms-spec-colour" value="Matte Black &amp; Brushed Brass">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="cms-form-label">Nib Size</label>
+                            <input type="text" class="cms-input" id="cms-spec-nib-size" value="0.7mm HB Lead">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="cms-form-label">Number of Internal Nibs</label>
+                            <input type="text" class="cms-input" id="cms-spec-nibs-count" value="5 Lead Nibs">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="cms-form-label">Replaceable</label>
+                            <select class="cms-input" id="cms-spec-replaceable">
+                                <option value="Yes">Yes</option>
+                                <option value="No">No</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="cms-form-label">Additional Specifications</label>
+                            <textarea class="cms-input" id="cms-spec-additional" rows="2">Zero sharpening required. Universal refill cartridge compatible.</textarea>
+                        </div>
+                    </div>
+                </div>
+
+
+            </main>
+        </div>
+
+        <!-- CMS Footer Bar -->
+        <footer class="cms-footer">
+            <button class="btn btn-outline-danger btn-sm" id="cms-reset-btn">RESET DEFAULT</button>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary btn-sm text-light" id="cms-cancel-btn">CANCEL</button>
+                <button class="btn btn-warning btn-sm fw-bold px-4" id="cms-save-btn" style="background:#D4AF37; border-color:#D4AF37; color:#111;">SAVE CHANGES</button>
+            </div>
+        </footer>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/script.js}" src="/js/script.js"></script>
+
+<!-- ======================================================
+     RESERVATION MODAL — Notebook Style
+     ====================================================== -->
+<div id="reserve-overlay" class="reserve-overlay" role="dialog" aria-modal="true" aria-labelledby="reserve-modal-title">
+    <div class="reserve-modal" id="reserve-modal">
+
+        <!-- Tape strip decoration -->
+        <div class="reserve-tape"></div>
+
+        <!-- Close button -->
+        <button class="reserve-close-btn" onclick="closeReserveModal()" aria-label="Close reservation form">✕</button>
+
+        <!-- FORM VIEW -->
+        <div id="reserve-form-view">
+            <div class="reserve-header">
+                <div class="reserve-pencil-icon">✏️</div>
+                <h2 class="reserve-title" id="reserve-modal-title">Reserve Your Edition</h2>
+                <p class="reserve-subtitle">Sign below to claim your MONA MATTI pencil</p>
+            </div>
+
+            <div class="reserve-rule"></div>
+
+            <form id="reserve-form" onsubmit="submitReservation(event)" novalidate>
+                <!-- Full Name -->
+                <div class="reserve-field-group">
+                    <label class="reserve-label" for="reserve-name">Full Name</label>
+                    <input
+                        type="text"
+                        id="reserve-name"
+                        name="fullName"
+                        class="reserve-input"
+                        placeholder="Your full name..."
+                        minlength="3"
+                        maxlength="50"
+                        autocomplete="name"
+                        required
+                    >
+                    <div class="reserve-field-line"></div>
+                    <span class="reserve-error" id="reserve-name-error"></span>
+                </div>
+
+                <div class="reserve-rule"></div>
+
+                <!-- Signature Pad -->
+                <div class="reserve-field-group">
+                    <label class="reserve-label">Signature</label>
+                    <div class="signature-pad-container" id="sig-container">
+                        <canvas id="signature-canvas" class="signature-canvas" aria-label="Signature drawing area"></canvas>
+                        <div class="signature-hint" id="sig-hint">Sign here with your mouse or finger…</div>
+                    </div>
+                    <input type="hidden" id="reserve-signature" name="signature">
+                    <span class="reserve-error" id="reserve-sig-error"></span>
+                    <button type="button" class="sig-clear-btn" onclick="clearSignature()">
+                        ↺ Clear Signature
+                    </button>
+                </div>
+
+                <div class="reserve-rule"></div>
+
+                <!-- Action Buttons -->
+                <div class="reserve-actions">
+                    <button type="submit" class="reserve-submit-btn" id="reserve-submit-btn">
+                        <span id="reserve-btn-text">Reserve My Pencil</span>
+                        <span id="reserve-btn-spinner" style="display:none;">Saving…</span>
+                    </button>
+                    <button type="button" class="reserve-cancel-btn" onclick="closeReserveModal()">Cancel</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- SUCCESS VIEW -->
+        <div id="reserve-success-view" style="display:none;">
+            <div class="reserve-success-content">
+                <div class="reserve-success-check">✔</div>
+                <h2 class="reserve-success-title">Reservation Complete</h2>
+                <p class="reserve-success-greeting">Thank you, <strong id="success-customer-name"></strong>.</p>
+                <p class="reserve-success-msg">Your MONA MATTI reservation has been recorded.</p>
+                <div class="reserve-id-badge">
+                    <span class="reserve-id-label">Reservation ID</span>
+                    <span class="reserve-id-value" id="success-reservation-id">MM-000001</span>
+                </div>
+                <div class="reserve-rule"></div>
+                <p class="reserve-success-note">We'll be in touch when your edition is ready to ship.</p>
+                <button class="reserve-done-btn" onclick="closeReserveModal()">Done</button>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+// ============================================================
+//  RESERVATION MODAL & SIGNATURE PAD
+// ============================================================
+
+let isDrawing = false;
+let lastX = 0;
+let lastY = 0;
+let hasSignature = false;
+let canvas, ctx;
+
+function openReserveModal() {
+    document.getElementById('reserve-overlay').classList.add('active');
+    document.body.style.overflow = 'hidden';
+    // Reset to form view
+    document.getElementById('reserve-form-view').style.display = 'block';
+    document.getElementById('reserve-success-view').style.display = 'none';
+    document.getElementById('reserve-form').reset();
+    document.getElementById('reserve-name-error').textContent = '';
+    document.getElementById('reserve-sig-error').textContent = '';
+    document.getElementById('reserve-btn-text').style.display = 'inline';
+    document.getElementById('reserve-btn-spinner').style.display = 'none';
+    document.getElementById('reserve-submit-btn').disabled = false;
+    initSignaturePad();
+}
+
+function closeReserveModal() {
+    document.getElementById('reserve-overlay').classList.remove('active');
+    document.body.style.overflow = '';
+    clearSignature();
+}
+
+// Close on overlay click
+document.getElementById('reserve-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeReserveModal();
+});
+
+// Escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeReserveModal();
+});
+
+// ---- Signature Pad ----
+function initSignaturePad() {
+    canvas = document.getElementById('signature-canvas');
+    const container = document.getElementById('sig-container');
+    canvas.width = container.offsetWidth || 480;
+    canvas.height = 140;
+    ctx = canvas.getContext('2d');
+    ctx.strokeStyle = '#2c2416';
+    ctx.lineWidth = 1.6;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    hasSignature = false;
+    document.getElementById('sig-hint').style.opacity = '1';
+
+    // Mouse events
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDraw);
+    canvas.addEventListener('mouseleave', stopDraw);
+
+    // Touch events
+    canvas.addEventListener('touchstart', startDrawTouch, { passive: false });
+    canvas.addEventListener('touchmove', drawTouch, { passive: false });
+    canvas.addEventListener('touchend', stopDraw);
+}
+
+function getPos(canvas, e) {
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+    };
+}
+
+function startDraw(e) {
+    isDrawing = true;
+    const pos = getPos(canvas, e);
+    [lastX, lastY] = [pos.x, pos.y];
+    document.getElementById('sig-hint').style.opacity = '0';
+    e.preventDefault();
+}
+
+function draw(e) {
+    if (!isDrawing) return;
+    const pos = getPos(canvas, e);
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(pos.x, pos.y);
+    ctx.stroke();
+    [lastX, lastY] = [pos.x, pos.y];
+    hasSignature = true;
+    e.preventDefault();
+}
+
+function stopDraw() { isDrawing = false; }
+
+function startDrawTouch(e) {
+    if (e.touches.length === 1) {
+        const touch = e.touches[0];
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        lastX = (touch.clientX - rect.left) * scaleX;
+        lastY = (touch.clientY - rect.top) * scaleY;
+        isDrawing = true;
+        document.getElementById('sig-hint').style.opacity = '0';
+    }
+    e.preventDefault();
+}
+
+function drawTouch(e) {
+    if (!isDrawing || e.touches.length !== 1) return;
+    const touch = e.touches[0];
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = (touch.clientX - rect.left) * scaleX;
+    const y = (touch.clientY - rect.top) * scaleY;
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    [lastX, lastY] = [x, y];
+    hasSignature = true;
+    e.preventDefault();
+}
+
+function clearSignature() {
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    hasSignature = false;
+    document.getElementById('sig-hint').style.opacity = '1';
+    document.getElementById('reserve-sig-error').textContent = '';
+    document.getElementById('reserve-signature').value = '';
+}
+
+// ---- Form Submission ----
+async function submitReservation(e) {
+    e.preventDefault();
+
+    // Client-side validation
+    let valid = true;
+    const nameInput = document.getElementById('reserve-name');
+    const nameError = document.getElementById('reserve-name-error');
+    const sigError = document.getElementById('reserve-sig-error');
+
+    nameError.textContent = '';
+    sigError.textContent = '';
+
+    const name = nameInput.value.trim();
+    if (!name || name.length < 3) {
+        nameError.textContent = 'Please enter your full name (minimum 3 characters).';
+        valid = false;
+    } else if (name.length > 50) {
+        nameError.textContent = 'Name must not exceed 50 characters.';
+        valid = false;
+    }
+
+    if (!hasSignature) {
+        sigError.textContent = 'Please draw your signature above.';
+        valid = false;
+    }
+
+    if (!valid) return;
+
+    // Capture signature as base64 PNG data URL
+    const sigData = canvas.toDataURL('image/png');
+    document.getElementById('reserve-signature').value = sigData;
+
+    // Show spinner
+    const btn = document.getElementById('reserve-submit-btn');
+    document.getElementById('reserve-btn-text').style.display = 'none';
+    document.getElementById('reserve-btn-spinner').style.display = 'inline';
+    btn.disabled = true;
+
+    try {
+        const formData = new FormData();
+        formData.append('fullName', name);
+        formData.append('signature', sigData);
+
+        const response = await fetch('/reserve', {
+            method: 'POST',
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            document.getElementById('success-customer-name').textContent = data.fullName;
+            document.getElementById('success-reservation-id').textContent = data.reservationId;
+            document.getElementById('reserve-form-view').style.display = 'none';
+            document.getElementById('reserve-success-view').style.display = 'flex';
+        } else {
+            nameError.textContent = data.message || 'An error occurred. Please try again.';
+            document.getElementById('reserve-btn-text').style.display = 'inline';
+            document.getElementById('reserve-btn-spinner').style.display = 'none';
+            btn.disabled = false;
+        }
+    } catch (err) {
+        nameError.textContent = 'Connection error. Please try again.';
+        document.getElementById('reserve-btn-text').style.display = 'inline';
+        document.getElementById('reserve-btn-spinner').style.display = 'none';
+        btn.disabled = false;
+    }
+}
+</script>
+
+</body>
+</html>
