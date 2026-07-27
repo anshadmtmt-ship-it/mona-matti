@@ -9,30 +9,26 @@ pipeline {
 
         stage('Build') {
             steps {
-                echo '========== BUILD STAGE =========='
                 sh 'mvn clean compile'
             }
         }
 
         stage('Unit Test') {
             steps {
-                echo '========== UNIT TEST STAGE =========='
                 sh 'mvn test'
             }
         }
-    }
 
-    post {
-        success {
-            echo 'Pipeline completed successfully.'
-        }
-
-        failure {
-            echo 'Pipeline failed. Please check the console output.'
-        }
-
-        always {
-            echo 'Pipeline execution finished.'
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('sonarqube') {
+                    sh '''
+                        mvn clean verify sonar:sonar \
+                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+                        -Dsonar.coverage.exclusions=**/MonaMattiApplication.java
+                    '''
+                }
+            }
         }
     }
 }
