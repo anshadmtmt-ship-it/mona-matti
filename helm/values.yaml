@@ -1,33 +1,103 @@
 replicaCount: 2
 
 image:
-  repository: mona-matti
+  repository: anshadin4k/mona-matti
+  tag: "17"
   pullPolicy: IfNotPresent
-  tag: "1.0.0"
 
 service:
   type: ClusterIP
-  port: 8099
+  port: 8080
+  targetPort: 8080
 
 ingress:
-  enabled: false
-  className: "nginx"
+  enabled: true
+  className: nginx
+  annotations: {}
   hosts:
-    - host: monamatti.local
+    - host: mona-matti.local
       paths:
         - path: /
           pathType: Prefix
+  tls: []
+
+serviceAccount:
+  create: true
+  automount: true
+  name: ""
+
+config:
+  springProfile: prod
+
+secret:
+  databaseName: mona_matti
+  databaseUsername: mona_user
+  databasePassword: mona_password
+  mysqlRootPassword: rootpassword123
+
+mysql:
+  enabled: true
+
+  image:
+    repository: mysql
+    tag: "8.0"
+    pullPolicy: IfNotPresent
+
+  database: mona_matti
+  username: mona_user
+  password: mona_password
+  rootPassword: rootpassword123
+
+  service:
+    type: ClusterIP
+    port: 3306
+
+  persistence:
+    enabled: true
+    storageClass: standard
+    accessMode: ReadWriteOnce
+    size: 2Gi
 
 resources:
+  requests:
+    cpu: 250m
+    memory: 256Mi
   limits:
     cpu: 500m
     memory: 512Mi
-  requests:
-    cpu: 100m
-    memory: 256Mi
 
 autoscaling:
   enabled: false
   minReplicas: 2
   maxReplicas: 5
   targetCPUUtilizationPercentage: 80
+
+startupProbe:
+  enabled: true
+  path: /actuator/health
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 30
+
+readinessProbe:
+  enabled: true
+  path: /actuator/health/readiness
+  initialDelaySeconds: 60
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 6
+
+livenessProbe:
+  enabled: true
+  path: /actuator/health/liveness
+  initialDelaySeconds: 90
+  periodSeconds: 15
+  timeoutSeconds: 5
+  failureThreshold: 3
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

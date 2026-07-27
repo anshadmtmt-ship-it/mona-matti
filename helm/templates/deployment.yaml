@@ -1,36 +1,92 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
   name: {{ include "mona-matti.fullname" . }}
   labels:
-    app: mona-matti
+    {{- include "mona-matti.labels" . | nindent 4 }}
+
 spec:
   replicas: {{ .Values.replicaCount }}
+
   selector:
     matchLabels:
-      app: mona-matti
+      {{- include "mona-matti.selectorLabels" . | nindent 6 }}
+
   template:
     metadata:
       labels:
-        app: mona-matti
+        {{- include "mona-matti.selectorLabels" . | nindent 8 }}
+
     spec:
       containers:
         - name: mona-matti
+
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+
           ports:
-            - containerPort: {{ .Values.service.port }}
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}
+              protocol: TCP
+
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              valueFrom:
+                configMapKeyRef:
+                  name: {{ include "mona-matti.fullname" . }}-config
+                  key: springProfile
+
+            - name: DB_HOST
+              value: "{{ include "mona-matti.fullname" . }}-mysql"
+
+            - name: DB_PORT
+              value: "3306"
+
+            - name: DB_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "mona-matti.fullname" . }}-secret
+                  key: databaseName
+
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "mona-matti.fullname" . }}-secret
+                  key: databaseUsername
+
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "mona-matti.fullname" . }}-secret
+                  key: databasePassword
+
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          livenessProbe:
+
+          startupProbe:
             httpGet:
               path: /actuator/health
-              port: {{ .Values.service.port }}
+              port: http
             initialDelaySeconds: 30
             periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 30
+
           readinessProbe:
             httpGet:
-              path: /actuator/health
-              port: {{ .Values.service.port }}
-            initialDelaySeconds: 15
-            periodSeconds: 5
+              path: /actuator/health/readiness
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: http
+            initialDelaySeconds: 90
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3

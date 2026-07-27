@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: {{ include "mona-matti.fullname" . }}-mysql
+  labels:
+    {{- include "mona-matti.labels" . | nindent 4 }}
+
+spec:
+  type: ClusterIP
+
+  selector:
+    app: {{ include "mona-matti.fullname" . }}-mysql
+
+  ports:
+    - name: mysql
+      port: {{ .Values.mysql.service.port }}
+      targetPort: 3306
+      protocol: TCP

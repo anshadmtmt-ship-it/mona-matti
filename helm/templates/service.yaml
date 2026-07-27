@@ -1,15 +1,19 @@
 apiVersion: v1
 kind: Service
+
 metadata:
   name: {{ include "mona-matti.fullname" . }}
   labels:
-    app: mona-matti
+    {{- include "mona-matti.labels" . | nindent 4 }}
+
 spec:
   type: {{ .Values.service.type }}
+
   ports:
-    - port: {{ .Values.service.port }}
-      targetPort: {{ .Values.service.port }}
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
       protocol: TCP
-      name: http
+
   selector:
-    app: mona-matti
+    {{- include "mona-matti.selectorLabels" . | nindent 4 }}

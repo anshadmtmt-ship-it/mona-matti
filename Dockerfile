@@ -38,10 +38,10 @@ WORKDIR /app
 COPY --from=builder /build/target/*.jar /app/app.jar
 
 # Expose default application port
-EXPOSE 8099
+EXPOSE 8080
 
 # Environment variable defaults
-ENV SERVER_PORT=8099 \
+ENV SERVER_PORT=8080 \
     SPRING_PROFILES_ACTIVE=prod \
     DB_HOST=localhost \
     DB_PORT=3306 \
