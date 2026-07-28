@@ -1,0 +1,48 @@
+pipeline {
+    agent any
+
+    parameters {
+        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag')
+    }
+
+    stages {
+
+        stage('Login to AWS ECR') {
+            steps {
+                withCredentials([[
+                    $class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-creds'
+                ]]) {
+                    sh '''
+                        aws ecr get-login-password --region eu-north-1 | \
+                        helm registry login \
+                        --username AWS \
+                        --password-stdin 175690104602.dkr.ecr.eu-north-1.amazonaws.com
+                    '''
+                }
+            }
+        }
+
+        stage('Pull Helm Chart') {
+            steps {
+                sh '''
+                    rm -f mona-matti-*.tgz
+
+                    helm pull \
+                    oci://175690104602.dkr.ecr.eu-north-1.amazonaws.com/mona-matti
+                '''
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                sh '''
+                    export KUBECONFIG=/var/lib/jenkins/.kube/config
+
+                    helm upgrade --install mona-matti mona-matti-1.0.0.tgz \
+                    --set image.tag=${IMAGE_TAG}
+                '''
+            }
+        }
+    }
+}
