@@ -99,19 +99,6 @@ pipeline {
             }
         }
 
-        stage('Update Helm Values') {
-            steps {
-                sh """
-                    sed -i 's/tag:.*/tag: "${BUILD_NUMBER}"/' ${CHART_PATH}/values.yaml
-
-                    echo "=============================="
-                    echo "Updated values.yaml"
-                    echo "=============================="
-                    grep "tag:" ${CHART_PATH}/values.yaml
-                """
-            }
-        }
-
         stage('Helm Lint') {
             steps {
                 sh '''
