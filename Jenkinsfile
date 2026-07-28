@@ -62,34 +62,26 @@ pipeline {
                         passwordVariable: 'DOCKER_PASS'
                     )
                 ]) {
-                    sh '''
-                        echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
-                    '''
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
                 }
             }
         }
 
         stage('Docker Build') {
             steps {
-                sh '''
-                    docker build -t mona-matti:${BUILD_NUMBER} .
-                '''
+                sh 'docker build -t mona-matti:${BUILD_NUMBER} .'
             }
         }
 
         stage('Docker Tag') {
             steps {
-                sh '''
-                    docker tag mona-matti:${BUILD_NUMBER} ${DOCKER_IMAGE}:${BUILD_NUMBER}
-                '''
+                sh 'docker tag mona-matti:${BUILD_NUMBER} ${DOCKER_IMAGE}:${BUILD_NUMBER}'
             }
         }
 
         stage('Docker Push') {
             steps {
-                sh '''
-                    docker push ${DOCKER_IMAGE}:${BUILD_NUMBER}
-                '''
+                sh 'docker push ${DOCKER_IMAGE}:${BUILD_NUMBER}'
             }
         }
 
@@ -101,9 +93,7 @@ pipeline {
 
         stage('Helm Lint') {
             steps {
-                sh '''
-                    helm lint ${CHART_PATH}
-                '''
+                sh 'helm lint ${CHART_PATH}'
             }
         }
 
@@ -118,10 +108,10 @@ pipeline {
 
         stage('AWS ECR Login') {
             steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-creds'
-                ]]) {
+                withCredentials([
+                    [$class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-creds']
+                ]) {
                     sh '''
                         aws ecr get-login-password --region ${AWS_REGION} | \
                         helm registry login \
@@ -132,29 +122,20 @@ pipeline {
             }
         }
 
-        stage('Push Helm Chart to ECR') {
+        stage('Push Helm Chart') {
             steps {
-                sh '''
-                    helm push ${CHART_NAME}-1.0.0.tgz \
-                    oci://${AWS_ECR}
-                '''
+                sh 'helm push ${CHART_NAME}-1.0.0.tgz oci://${AWS_ECR}'
             }
         }
     }
 
     post {
         success {
-            echo '========================================='
-            echo 'CI Pipeline Completed Successfully'
-            echo "Docker Image : ${DOCKER_IMAGE}:${BUILD_NUMBER}"
-            echo "Helm Chart   : ${CHART_NAME}-1.0.0.tgz"
-            echo '========================================='
+            echo "Build Successful - Image: ${DOCKER_IMAGE}:${BUILD_NUMBER}"
         }
 
         failure {
-            echo '========================================='
-            echo 'CI Pipeline Failed'
-            echo '========================================='
+            echo "Build Failed"
         }
 
         always {
