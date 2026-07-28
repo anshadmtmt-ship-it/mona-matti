@@ -14,6 +14,7 @@ class EntityTest {
     @Test
     @DisplayName("Test Product getters, setters, equals, hashCode and toString")
     void testProductEntity() {
+
         Product p1 = new Product("Name", "Hero", "Sub", 49.99, "Desc", "img.svg", "IN_STOCK");
         p1.setId(1L);
 
@@ -38,7 +39,8 @@ class EntityTest {
     @Test
     @DisplayName("Test Reservation getters, formattedId, equals, hashCode and toString")
     void testReservationEntity() {
-        Reservation r1 = new Reservation("Jane Doe", "data:image/png;base64,abc123");
+
+        Reservation r1 = new Reservation("Jane Doe");
         r1.setId(1L);
 
         Reservation r2 = new Reservation();
@@ -46,7 +48,6 @@ class EntityTest {
 
         assertEquals(1L, r1.getId());
         assertEquals("Jane Doe", r1.getFullName());
-        assertEquals("data:image/png;base64,abc123", r1.getSignature());
         assertEquals("MM-000001", r1.getFormattedId());
 
         assertEquals(r1, r2);
@@ -57,15 +58,23 @@ class EntityTest {
     @Test
     @DisplayName("Test GlobalExceptionHandler exception handling")
     void testGlobalExceptionHandler() {
+
         GlobalExceptionHandler handler = new GlobalExceptionHandler();
         Model model = new ConcurrentModel();
 
-        String view1 = handler.handleResourceNotFound(new ResourceNotFoundException("Not found"), model);
+        String view1 = handler.handleResourceNotFound(
+                new ResourceNotFoundException("Not found"),
+                model);
+
         assertEquals("error", view1);
         assertEquals("Not found", model.getAttribute("errorMessage"));
 
         Model model2 = new ConcurrentModel();
-        String view2 = handler.handleGeneralException(new RuntimeException("Server error"), model2);
+
+        String view2 = handler.handleGeneralException(
+                new RuntimeException("Server error"),
+                model2);
+
         assertEquals("error", view2);
         assertNotNull(model2.getAttribute("errorMessage"));
     }

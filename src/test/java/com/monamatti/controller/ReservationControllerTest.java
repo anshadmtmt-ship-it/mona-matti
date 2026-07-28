@@ -31,14 +31,16 @@ class ReservationControllerTest {
 
     @BeforeEach
     void setUp() {
-        testReservation = new Reservation("Jane Architect", "data:image/png;base64,sig123");
+        testReservation = new Reservation("Jane Architect");
         testReservation.setId(1L);
     }
 
     @Test
     @DisplayName("Should successfully submit reservation via POST /reserve")
     void testSubmitReservation_Success() throws Exception {
-        when(reservationService.saveReservation(any(Reservation.class))).thenReturn(testReservation);
+
+        when(reservationService.saveReservation(any(Reservation.class)))
+                .thenReturn(testReservation);
 
         mockMvc.perform(post("/reserve")
                         .param("fullName", "Jane Architect")
@@ -50,10 +52,11 @@ class ReservationControllerTest {
     }
 
     @Test
-    @DisplayName("Should return HTTP 400 Bad Request when reservation validation fails")
+    @DisplayName("Should return HTTP 400 when validation fails")
     void testSubmitReservation_ValidationError() throws Exception {
+
         mockMvc.perform(post("/reserve")
-                        .param("fullName", "") // Invalid blank name
+                        .param("fullName", "")
                         .param("signature", ""))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.success").value(false))
@@ -61,9 +64,11 @@ class ReservationControllerTest {
     }
 
     @Test
-    @DisplayName("Should serve admin reservations list view")
+    @DisplayName("Should serve admin reservations page")
     void testListReservations() throws Exception {
-        when(reservationService.getAllReservations()).thenReturn(List.of(testReservation));
+
+        when(reservationService.getAllReservations())
+                .thenReturn(List.of(testReservation));
 
         mockMvc.perform(get("/admin/reservations"))
                 .andExpect(status().isOk())
@@ -72,8 +77,9 @@ class ReservationControllerTest {
     }
 
     @Test
-    @DisplayName("Should delete reservation and redirect to admin list")
+    @DisplayName("Should delete reservation")
     void testDeleteReservation() throws Exception {
+
         doNothing().when(reservationService).deleteReservation(1L);
 
         mockMvc.perform(post("/admin/reservations/delete/1"))
