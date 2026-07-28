@@ -7,7 +7,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "reservation", indexes = {
-    @Index(name = "idx_reservation_created_at", columnList = "created_at")
+        @Index(name = "idx_reservation_created_at", columnList = "created_at")
 })
 public class Reservation {
 
@@ -20,40 +20,69 @@ public class Reservation {
     @Column(name = "full_name", nullable = false, length = 50)
     private String fullName;
 
-    @NotBlank(message = "Signature is required")
-    @Column(name = "signature", columnDefinition = "TEXT", nullable = false)
+    /*
+     * Used only for form submission.
+     * Not stored in the database.
+     */
+    @Transient
     private String signature;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
-    public Reservation() {}
+    public Reservation() {
+    }
 
-    public Reservation(String fullName, String signature) {
+    public Reservation(String fullName) {
         this.fullName = fullName;
-        this.signature = signature;
         this.createdAt = LocalDateTime.now();
     }
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
+        if (createdAt == null) {
+            createdAt = LocalDateTime.now();
+        }
     }
 
+    // ==========================
     // Getters & Setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    // ==========================
 
-    public String getFullName() { return fullName; }
-    public void setFullName(String fullName) { this.fullName = fullName; }
+    public Long getId() {
+        return id;
+    }
 
-    public String getSignature() { return signature; }
-    public void setSignature(String signature) { this.signature = signature; }
+    public void setId(Long id) {
+        this.id = id;
+    }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public String getFullName() {
+        return fullName;
+    }
 
-    /** Formatted reservation ID: MM-000001 */
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
+    }
+
+    // Signature exists only for receiving data from the form.
+    public String getSignature() {
+        return signature;
+    }
+
+    public void setSignature(String signature) {
+        this.signature = signature;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    // MM-000001
     public String getFormattedId() {
         return String.format("MM-%06d", id);
     }
@@ -62,15 +91,23 @@ public class Reservation {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Reservation r = (Reservation) o;
-        return id != null && id.equals(r.id);
+
+        Reservation that = (Reservation) o;
+
+        return id != null && id.equals(that.id);
     }
 
     @Override
-    public int hashCode() { return getClass().hashCode(); }
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 
     @Override
     public String toString() {
-        return "Reservation{id=" + id + ", fullName='" + fullName + "'}";
+        return "Reservation{" +
+                "id=" + id +
+                ", fullName='" + fullName + '\'' +
+                ", createdAt=" + createdAt +
+                '}';
     }
 }
