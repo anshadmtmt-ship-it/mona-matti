@@ -7,6 +7,10 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "anshadin4k/mona-matti"
+        CHART_NAME   = "mona-matti"
+        CHART_PATH   = "helm"
+        AWS_REGION   = "eu-north-1"
+        AWS_ECR      = "175690104602.dkr.ecr.eu-north-1.amazonaws.com"
     }
 
     stages {
@@ -23,16 +27,22 @@ pipeline {
             }
         }
 
-        stage('SonarCloud Analysis') {
+        stage('SonarQube Analysis') {
             steps {
-                withCredentials([string(credentialsId: 'sonarcloud-token', variable: 'SONAR_TOKEN')]) {
+                withSonarQubeEnv('sonarqube') {
                     sh '''
                         mvn clean verify sonar:sonar \
-                        -Dsonar.token=$SONAR_TOKEN \
-                        -Dsonar.host.url=https://sonarcloud.io \
-                        -Dsonar.organization=anshadmtmt-ship-it \
-                        -Dsonar.projectKey=anshadmtmt-ship-it_mona-matti
+                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+                        -Dsonar.coverage.exclusions=**/MonaMattiApplication.java
                     '''
+                }
+            }
+        }
+
+        stage('Quality Gate') {
+            steps {
+                timeout(time: 2, unit: 'MINUTES') {
+                    waitForQualityGate abortPipeline: true
                 }
             }
         }
@@ -80,6 +90,43 @@ pipeline {
                 sh 'docker logout'
             }
         }
+
+        stage('Helm Lint') {
+            steps {
+                sh 'helm lint ${CHART_PATH}'
+            }
+        }
+
+        stage('Package Helm Chart') {
+            steps {
+                sh '''
+                    rm -f ${CHART_NAME}-*.tgz
+                    helm package ${CHART_PATH}
+                '''
+            }
+        }
+
+        stage('AWS ECR Login') {
+            steps {
+                withCredentials([
+                    [$class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-creds']
+                ]) {
+                    sh '''
+                        aws ecr get-login-password --region ${AWS_REGION} | \
+                        helm registry login \
+                        --username AWS \
+                        --password-stdin ${AWS_ECR}
+                    '''
+                }
+            }
+        }
+
+        stage('Push Helm Chart') {
+            steps {
+                sh 'helm push ${CHART_NAME}-1.0.0.tgz oci://${AWS_ECR}'
+            }
+        }
     }
 
     post {
@@ -96,3 +143,5 @@ pipeline {
         }
     }
 }
+
+update the new remove teh old
