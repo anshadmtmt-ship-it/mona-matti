@@ -8,7 +8,7 @@ namespace: production
 
 replicas:
   - name: mona-matti
-    count: 2
+    count: 1
 
 images:
   - name: anshadin4k/mona-matti
