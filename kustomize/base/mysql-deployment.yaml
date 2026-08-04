@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: mona-matti-mysql
+  labels:
+    app: mona-matti-mysql
+
+spec:
+  replicas: 3
+
+  selector:
+    matchLabels:
+      app: mona-matti-mysql
+
+  template:
+    metadata:
+      labels:
+        app: mona-matti-mysql
+
+    spec:
+      containers:
+        - name: mysql
+
+          image: mysql:8.0
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - containerPort: 3306
+              protocol: TCP
+
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mona-matti-secret
+                  key: mysqlRootPassword
+
+            - name: MYSQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: mona-matti-secret
+                  key: databaseName
+
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: mona-matti-secret
+                  key: databaseUsername
+
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mona-matti-secret
+                  key: databasePassword
+
+          volumeMounts:
+            - name: mysql-storage
+              mountPath: /var/lib/mysql
+
+      volumes:
+        - name: mysql-storage
+          persistentVolumeClaim:
+            claimName: mona-matti-mysql-pvc

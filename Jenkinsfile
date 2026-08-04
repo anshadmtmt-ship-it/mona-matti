@@ -27,17 +27,19 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('sonarqube') {
-                    sh '''
-                        mvn clean verify sonar:sonar \
-                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
-                        -Dsonar.coverage.exclusions=**/MonaMattiApplication.java
-                    '''
-                }
-            }
+stage('SonarCloud Analysis') {
+    steps {
+        withCredentials([string(credentialsId: 'sonarcloud-token', variable: 'SONAR_TOKEN')]) {
+            sh '''
+                mvn clean verify sonar:sonar \
+                -Dsonar.token=$SONAR_TOKEN \
+                -Dsonar.host.url=https://sonarcloud.io \
+                -Dsonar.organization=anshadmtmt-ship-it \
+                -Dsonar.projectKey=anshadmtmt-ship-it_mona-matti
+            '''
         }
+    }
+}
 
         stage('Quality Gate') {
             steps {

@@ -1,0 +1,25 @@
+# SCM
+.git/
+.gitignore
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+target/
+*.jar
+
+# Helm
+*.tgz
+
+# Documentation
+README.md
+docs/
+
+# Screenshots
+screenshots/

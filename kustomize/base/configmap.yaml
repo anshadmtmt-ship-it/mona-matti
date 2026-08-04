@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: mona-matti-config
+  labels:
+    app: mona-matti
+
+data:
+  springProfile: "prod"
