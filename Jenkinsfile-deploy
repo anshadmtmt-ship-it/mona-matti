@@ -2,47 +2,90 @@ pipeline {
     agent any
 
     parameters {
-        string(name: 'IMAGE_TAG', defaultValue: 'latest', description: 'Docker image tag')
+        choice(
+            name: 'ENVIRONMENT',
+            choices: ['dev', 'production'],
+            description: 'Select deployment environment'
+        )
+
+        string(
+            name: 'BUILD_NUMBER',
+            defaultValue: '',
+            description: 'CI build number to deploy (Example: 12)'
+        )
+    }
+
+    environment {
+        AWS_REGION = "eu-north-1"
+        S3_BUCKET  = "mona-matti-kustomize-artifacts"
+        KUBECONFIG = "/var/lib/jenkins/.kube/config"
     }
 
     stages {
 
-        stage('Login to AWS ECR') {
+        stage('Download Kustomize Artifact') {
             steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-creds'
-                ]]) {
-                    sh '''
-                        aws ecr get-login-password --region eu-north-1 | \
-                        helm registry login \
-                        --username AWS \
-                        --password-stdin 175690104602.dkr.ecr.eu-north-1.amazonaws.com
-                    '''
+                withCredentials([
+                    [$class: 'AmazonWebServicesCredentialsBinding',
+                    credentialsId: 'aws-creds']
+                ]) {
+
+                    sh """
+                        rm -rf kustomize
+                        rm -f kustomize-*.tar.gz
+
+                        aws s3 cp \
+                        s3://${S3_BUCKET}/kustomize-\${BUILD_NUMBER}.tar.gz \
+                        .
+                    """
                 }
             }
         }
 
-        stage('Pull Helm Chart') {
+        stage('Extract Artifact') {
             steps {
-                sh '''
-                    rm -f mona-matti-*.tgz
-
-                    helm pull \
-                    oci://175690104602.dkr.ecr.eu-north-1.amazonaws.com/mona-matti
-                '''
+                sh """
+                    tar -xzf kustomize-${BUILD_NUMBER}.tar.gz
+                """
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy to Kubernetes') {
             steps {
-                sh '''
-                    export KUBECONFIG=/var/lib/jenkins/.kube/config
-
-                    helm upgrade --install mona-matti mona-matti-1.0.0.tgz \
-                    --set image.tag=${IMAGE_TAG}
-                '''
+                sh """
+                    kubectl apply \
+                    -k kustomize/overlays/${params.ENVIRONMENT}
+                """
             }
+        }
+
+        stage('Verify Rollout') {
+            steps {
+                sh """
+                    kubectl rollout status deployment/mona-matti \
+                    -n ${params.ENVIRONMENT}
+                """
+            }
+        }
+
+    }
+
+    post {
+
+        success {
+            echo "====================================="
+            echo "Deployment Successful"
+            echo "Environment : ${params.ENVIRONMENT}"
+            echo "Build : ${params.BUILD_NUMBER}"
+            echo "====================================="
+        }
+
+        failure {
+            echo "Deployment Failed"
+        }
+
+        always {
+            cleanWs()
         }
     }
 }
