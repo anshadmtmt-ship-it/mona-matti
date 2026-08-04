@@ -9,9 +9,9 @@ pipeline {
         )
 
         string(
-            name: 'BUILD_NUMBER',
+            name: 'CI_BUILD_NUMBER',
             defaultValue: '',
-            description: 'CI build number to deploy (Example: 12)'
+            description: 'Enter the CI build number (Example: 38)'
         )
     }
 
@@ -35,7 +35,7 @@ pipeline {
                         rm -f kustomize-*.tar.gz
 
                         aws s3 cp \
-                        s3://${S3_BUCKET}/kustomize-\${BUILD_NUMBER}.tar.gz \
+                        s3://${S3_BUCKET}/kustomize-${params.CI_BUILD_NUMBER}.tar.gz \
                         .
                     """
                 }
@@ -45,7 +45,7 @@ pipeline {
         stage('Extract Artifact') {
             steps {
                 sh """
-                    tar -xzf kustomize-${BUILD_NUMBER}.tar.gz
+                    tar -xzf kustomize-${params.CI_BUILD_NUMBER}.tar.gz
                 """
             }
         }
@@ -53,6 +53,8 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 sh """
+                    export KUBECONFIG=${KUBECONFIG}
+
                     kubectl apply \
                     -k kustomize/overlays/${params.ENVIRONMENT}
                 """
@@ -62,6 +64,8 @@ pipeline {
         stage('Verify Rollout') {
             steps {
                 sh """
+                    export KUBECONFIG=${KUBECONFIG}
+
                     kubectl rollout status deployment/mona-matti \
                     -n ${params.ENVIRONMENT}
                 """
@@ -76,7 +80,7 @@ pipeline {
             echo "====================================="
             echo "Deployment Successful"
             echo "Environment : ${params.ENVIRONMENT}"
-            echo "Build : ${params.BUILD_NUMBER}"
+            echo "CI Build : ${params.CI_BUILD_NUMBER}"
             echo "====================================="
         }
 
