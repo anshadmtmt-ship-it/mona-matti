@@ -19,15 +19,9 @@
     </parent>
 
     <properties>
-
         <java.version>17</java.version>
 
-        <!-- SonarCloud -->
-        <sonar.organization>anshadmtmt-ship-it</sonar.organization>
-        <sonar.projectKey>anshadmtmt-ship-it_mona-matti</sonar.projectKey>
-        <sonar.host.url>https://sonarcloud.io</sonar.host.url>
-
-        <!-- JaCoCo -->
+        <!-- SonarQube -->
         <sonar.coverage.jacoco.xmlReportPaths>
             target/site/jacoco/jacoco.xml
         </sonar.coverage.jacoco.xmlReportPaths>
@@ -35,7 +29,6 @@
         <sonar.coverage.exclusions>
             **/MonaMattiApplication.java
         </sonar.coverage.exclusions>
-
     </properties>
 
     <dependencies>
@@ -134,7 +127,7 @@
 
             </plugin>
 
-            <!-- SonarCloud Scanner -->
+            <!-- SonarQube -->
             <plugin>
                 <groupId>org.sonarsource.scanner.maven</groupId>
                 <artifactId>sonar-maven-plugin</artifactId>
