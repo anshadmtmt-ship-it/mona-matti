@@ -7,10 +7,8 @@ pipeline {
 
     environment {
         DOCKER_IMAGE = "anshadin4k/mona-matti"
-        CHART_NAME   = "mona-matti"
-        CHART_PATH   = "helm"
         AWS_REGION   = "eu-north-1"
-        AWS_ECR      = "175690104602.dkr.ecr.eu-north-1.amazonaws.com"
+        S3_BUCKET    = "mona-matti-kustomize-artifacts"
     }
 
     stages {
@@ -91,47 +89,47 @@ pipeline {
             }
         }
 
-        stage('Helm Lint') {
+        stage('Update Kustomize Image Tag') {
             steps {
-                sh 'helm lint ${CHART_PATH}'
+                sh """
+                    sed -i 's|newTag:.*|newTag: ${BUILD_NUMBER}|g' \
+                    kustomize/overlays/dev/kustomization.yaml
+                """
             }
         }
 
-        stage('Package Helm Chart') {
+        stage('Archive Kustomize') {
             steps {
-                sh '''
-                    rm -f ${CHART_NAME}-*.tgz
-                    helm package ${CHART_PATH}
-                '''
+                sh """
+                    tar -czf kustomize-${BUILD_NUMBER}.tar.gz kustomize
+                """
             }
         }
 
-        stage('AWS ECR Login') {
+        stage('Upload Kustomize to S3') {
             steps {
                 withCredentials([
                     [$class: 'AmazonWebServicesCredentialsBinding',
                     credentialsId: 'aws-creds']
                 ]) {
-                    sh '''
-                        aws ecr get-login-password --region ${AWS_REGION} | \
-                        helm registry login \
-                        --username AWS \
-                        --password-stdin ${AWS_ECR}
-                    '''
+                    sh """
+                        aws s3 cp \
+                        kustomize-${BUILD_NUMBER}.tar.gz \
+                        s3://${S3_BUCKET}/
+                    """
                 }
-            }
-        }
-
-        stage('Push Helm Chart') {
-            steps {
-                sh 'helm push ${CHART_NAME}-1.0.0.tgz oci://${AWS_ECR}'
             }
         }
     }
 
     post {
         success {
-            echo "Build Successful - Image: ${DOCKER_IMAGE}:${BUILD_NUMBER}"
+            echo "====================================="
+            echo "Build Successful"
+            echo "Docker Image : ${DOCKER_IMAGE}:${BUILD_NUMBER}"
+            echo "Kustomize Archive : kustomize-${BUILD_NUMBER}.tar.gz"
+            echo "Uploaded to : s3://${S3_BUCKET}/"
+            echo "====================================="
         }
 
         failure {
