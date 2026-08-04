@@ -2,22 +2,15 @@ pipeline {
     agent any
 
     parameters {
-        choice(
-            name: 'ENVIRONMENT',
-            choices: ['dev', 'production'],
-            description: 'Select deployment environment'
-        )
-
         string(
             name: 'CI_BUILD_NUMBER',
             defaultValue: '',
-            description: 'Enter the CI build number (Example: 38)'
+            description: 'Enter CI Build Number (Example: 38)'
         )
     }
 
     environment {
-        AWS_REGION = "eu-north-1"
-        S3_BUCKET  = "mona-matti-kustomize-artifacts"
+        S3_BUCKET = "mona-matti-kustomize-artifacts"
         KUBECONFIG = "/var/lib/jenkins/.kube/config"
     }
 
@@ -29,14 +22,12 @@ pipeline {
                     [$class: 'AmazonWebServicesCredentialsBinding',
                     credentialsId: 'aws-creds']
                 ]) {
-
                     sh """
                         rm -rf kustomize
                         rm -f kustomize-*.tar.gz
 
                         aws s3 cp \
-                        s3://${S3_BUCKET}/kustomize-${params.CI_BUILD_NUMBER}.tar.gz \
-                        .
+                        s3://${S3_BUCKET}/kustomize-${params.CI_BUILD_NUMBER}.tar.gz .
                     """
                 }
             }
@@ -50,13 +41,12 @@ pipeline {
             }
         }
 
-        stage('Deploy to Kubernetes') {
+        stage('Deploy to Dev') {
             steps {
                 sh """
                     export KUBECONFIG=${KUBECONFIG}
 
-                    kubectl apply \
-                    -k kustomize/overlays/${params.ENVIRONMENT}
+                    kubectl apply -k kustomize/overlays/dev
                 """
             }
         }
@@ -66,21 +56,18 @@ pipeline {
                 sh """
                     export KUBECONFIG=${KUBECONFIG}
 
-                    kubectl rollout status deployment/mona-matti \
-                    -n ${params.ENVIRONMENT}
+                    kubectl rollout status deployment/mona-matti -n dev
                 """
             }
         }
-
     }
 
     post {
-
         success {
             echo "====================================="
             echo "Deployment Successful"
-            echo "Environment : ${params.ENVIRONMENT}"
             echo "CI Build : ${params.CI_BUILD_NUMBER}"
+            echo "Environment : dev"
             echo "====================================="
         }
 
