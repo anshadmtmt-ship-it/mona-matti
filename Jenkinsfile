@@ -93,12 +93,12 @@ pipeline {
             steps {
                 sh """
                     sed -i 's|newTag:.*|newTag: "${BUILD_NUMBER}"|g' \
-                    kustomize/overlays/dev/kustomization.yaml
+                    kustomize/overlays/production/kustomization.yaml
                 """
 
                 sh """
                     echo "Updated kustomization.yaml"
-                    cat kustomize/overlays/dev/kustomization.yaml
+                    cat kustomize/overlays/production/kustomization.yaml
                 """
             }
         }

@@ -60,24 +60,24 @@ pipeline {
                     echo "=================================="
                     echo "Kustomization File"
                     echo "=================================="
-                    cat deploy/kustomize/overlays/dev/kustomization.yaml
+                    cat deploy/kustomize/overlays/production/kustomization.yaml
 
                     echo
                     echo "=================================="
                     echo "Rendered Image"
                     echo "=================================="
-                    kubectl kustomize deploy/kustomize/overlays/dev | grep image:
+                    kubectl kustomize deploy/kustomize/overlays/production | grep image:
                 """
             }
         }
 
-        stage('Deploy to Dev') {
+        stage('Deploy to Production') {
             steps {
                 sh """
                     export KUBECONFIG=${KUBECONFIG}
 
                     kubectl apply \
-                    -k deploy/kustomize/overlays/dev
+                    -k deploy/kustomize/overlays/production
                 """
             }
         }
@@ -87,7 +87,7 @@ pipeline {
                 sh """
                     export KUBECONFIG=${KUBECONFIG}
 
-                    kubectl rollout status deployment/mona-matti -n dev
+                    kubectl rollout status deployment/mona-matti -n production
                 """
             }
         }
@@ -99,7 +99,7 @@ pipeline {
         success {
             echo "========================================"
             echo "Deployment Successful"
-            echo "Environment : dev"
+            echo "Environment : production"
             echo "Build Number: ${params.CI_BUILD_NUMBER}"
             echo "========================================"
         }
