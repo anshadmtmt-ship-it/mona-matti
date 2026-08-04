@@ -16,28 +16,49 @@ pipeline {
 
     stages {
 
+        stage('Debug') {
+            steps {
+                script {
+                    echo "CI_BUILD_NUMBER = '${params.CI_BUILD_NUMBER}'"
+
+                    if (!params.CI_BUILD_NUMBER?.trim()) {
+                        error("CI_BUILD_NUMBER parameter is empty!")
+                    }
+                }
+            }
+        }
+
         stage('Download Kustomize Artifact') {
             steps {
-                withCredentials([
-                    [$class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-creds']
-                ]) {
-                    sh """
-                        rm -rf kustomize
-                        rm -f kustomize-*.tar.gz
+                script {
+                    def artifact = "kustomize-${params.CI_BUILD_NUMBER}.tar.gz"
 
-                        aws s3 cp \
-                        s3://${S3_BUCKET}/kustomize-${params.CI_BUILD_NUMBER}.tar.gz .
-                    """
+                    echo "Downloading ${artifact}"
+
+                    withCredentials([
+                        [$class: 'AmazonWebServicesCredentialsBinding',
+                        credentialsId: 'aws-creds']
+                    ]) {
+                        sh """
+                            rm -rf kustomize
+                            rm -f kustomize-*.tar.gz
+
+                            aws s3 cp s3://${S3_BUCKET}/${artifact} .
+                        """
+                    }
                 }
             }
         }
 
         stage('Extract Artifact') {
             steps {
-                sh """
-                    tar -xzf kustomize-${params.CI_BUILD_NUMBER}.tar.gz
-                """
+                script {
+                    def artifact = "kustomize-${params.CI_BUILD_NUMBER}.tar.gz"
+
+                    sh """
+                        tar -xzf ${artifact}
+                    """
+                }
             }
         }
 
@@ -45,7 +66,6 @@ pipeline {
             steps {
                 sh """
                     export KUBECONFIG=${KUBECONFIG}
-
                     kubectl apply -k kustomize/overlays/dev
                 """
             }
@@ -55,7 +75,6 @@ pipeline {
             steps {
                 sh """
                     export KUBECONFIG=${KUBECONFIG}
-
                     kubectl rollout status deployment/mona-matti -n dev
                 """
             }
@@ -64,11 +83,7 @@ pipeline {
 
     post {
         success {
-            echo "====================================="
             echo "Deployment Successful"
-            echo "CI Build : ${params.CI_BUILD_NUMBER}"
-            echo "Environment : dev"
-            echo "====================================="
         }
 
         failure {
