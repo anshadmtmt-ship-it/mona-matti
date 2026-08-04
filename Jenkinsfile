@@ -92,8 +92,13 @@ pipeline {
         stage('Update Kustomize Image Tag') {
             steps {
                 sh """
-                    sed -i 's|newTag:.*|newTag: ${BUILD_NUMBER}|g' \
+                    sed -i 's|newTag:.*|newTag: "${BUILD_NUMBER}"|g' \
                     kustomize/overlays/dev/kustomization.yaml
+                """
+
+                sh """
+                    echo "Updated kustomization.yaml"
+                    cat kustomize/overlays/dev/kustomization.yaml
                 """
             }
         }

@@ -5,7 +5,7 @@ pipeline {
         string(
             name: 'CI_BUILD_NUMBER',
             defaultValue: '',
-            description: 'Enter CI Build Number (Example: 38)'
+            description: 'Enter CI Build Number (Example: 41)'
         )
     }
 
@@ -16,21 +16,13 @@ pipeline {
 
     stages {
 
-        stage('Debug') {
-            steps {
-                script {
-                    echo "CI_BUILD_NUMBER = '${params.CI_BUILD_NUMBER}'"
-
-                    if (!params.CI_BUILD_NUMBER?.trim()) {
-                        error("CI_BUILD_NUMBER parameter is empty!")
-                    }
-                }
-            }
-        }
-
         stage('Download Kustomize Artifact') {
             steps {
                 script {
+                    if (!params.CI_BUILD_NUMBER?.trim()) {
+                        error("CI_BUILD_NUMBER cannot be empty.")
+                    }
+
                     def artifact = "kustomize-${params.CI_BUILD_NUMBER}.tar.gz"
 
                     echo "Downloading ${artifact}"
@@ -43,7 +35,8 @@ pipeline {
                             rm -rf kustomize
                             rm -f kustomize-*.tar.gz
 
-                            aws s3 cp s3://${S3_BUCKET}/${artifact} .
+                            aws s3 cp \
+                            s3://${S3_BUCKET}/${artifact} .
                         """
                     }
                 }
@@ -52,13 +45,9 @@ pipeline {
 
         stage('Extract Artifact') {
             steps {
-                script {
-                    def artifact = "kustomize-${params.CI_BUILD_NUMBER}.tar.gz"
-
-                    sh """
-                        tar -xzf ${artifact}
-                    """
-                }
+                sh """
+                    tar -xzf kustomize-${params.CI_BUILD_NUMBER}.tar.gz
+                """
             }
         }
 
@@ -83,7 +72,11 @@ pipeline {
 
     post {
         success {
+            echo "========================================"
             echo "Deployment Successful"
+            echo "Environment : dev"
+            echo "Build Number: ${params.CI_BUILD_NUMBER}"
+            echo "========================================"
         }
 
         failure {
