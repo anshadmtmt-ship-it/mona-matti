@@ -10,9 +10,6 @@ pipeline {
 
         GITOPS_REPO   = "https://github.com/anshadmtmt-ship-it/mona-matti-gitops.git"
         GITOPS_BRANCH = "main"
-
-        AWS_REGION = "eu-north-1"
-        S3_BUCKET  = "mona-matti-kustomize-artifacts"
     }
 
     stages {
@@ -125,7 +122,7 @@ pipeline {
                             cat kustomize/overlays/production/kustomization.yaml
 
                             echo
-                            echo "Updating image tag..."
+                            echo "Updating image tag to ${BUILD_NUMBER}..."
 
                             sed -i \
                             's|newTag:.*|newTag: "'${BUILD_NUMBER}'"|g' \
@@ -182,29 +179,6 @@ pipeline {
                 }
             }
         }
-
-        stage('Archive Kustomize') {
-            steps {
-                sh '''
-                    tar -czf kustomize-${BUILD_NUMBER}.tar.gz kustomize
-                '''
-            }
-        }
-
-        stage('Upload Kustomize to S3') {
-            steps {
-                withCredentials([
-                    [$class: 'AmazonWebServicesCredentialsBinding',
-                    credentialsId: 'aws-creds']
-                ]) {
-                    sh '''
-                        aws s3 cp \
-                        kustomize-${BUILD_NUMBER}.tar.gz \
-                        s3://${S3_BUCKET}/
-                    '''
-                }
-            }
-        }
     }
 
     post {
@@ -213,9 +187,11 @@ pipeline {
             echo "======================================"
             echo "       CI/CD PIPELINE SUCCESS"
             echo "======================================"
+
             echo "Build Number : ${BUILD_NUMBER}"
             echo "Docker Image : ${DOCKER_IMAGE}:${BUILD_NUMBER}"
             echo "GitOps Repo  : ${GITOPS_REPO}"
+
             echo "======================================"
         }
 
