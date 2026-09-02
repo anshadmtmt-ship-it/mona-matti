@@ -6,9 +6,13 @@ pipeline {
     }
 
     environment {
-        DOCKER_IMAGE = "anshadin4k/mona-matti"
-        AWS_REGION   = "eu-north-1"
-        S3_BUCKET    = "mona-matti-kustomize-artifacts"
+        DOCKER_IMAGE  = "anshadin4k/mona-matti"
+
+        GITOPS_REPO   = "https://github.com/anshadmtmt-ship-it/mona-matti-gitops.git"
+        GITOPS_BRANCH = "main"
+
+        AWS_REGION = "eu-north-1"
+        S3_BUCKET  = "mona-matti-kustomize-artifacts"
     }
 
     stages {
@@ -60,7 +64,11 @@ pipeline {
                         passwordVariable: 'DOCKER_PASS'
                     )
                 ]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login \
+                        -u "$DOCKER_USER" \
+                        --password-stdin
+                    '''
                 }
             }
         }
@@ -89,25 +97,97 @@ pipeline {
             }
         }
 
-        stage('Update Kustomize Image Tag') {
+        stage('Update GitOps') {
             steps {
-                sh """
-                    sed -i 's|newTag:.*|newTag: "${BUILD_NUMBER}"|g' \
-                    kustomize/overlays/production/kustomization.yaml
-                """
+                dir('gitops') {
 
-                sh """
-                    echo "Updated kustomization.yaml"
-                    cat kustomize/overlays/production/kustomization.yaml
-                """
+                    deleteDir()
+
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'github-gitops',
+                            usernameVariable: 'GIT_USER',
+                            passwordVariable: 'GIT_TOKEN'
+                        )
+                    ]) {
+
+                        sh '''
+                            git clone \
+                            https://${GIT_USER}:${GIT_TOKEN}@github.com/anshadmtmt-ship-it/mona-matti-gitops.git \
+                            .
+
+                            git checkout main
+
+                            echo "======================================"
+                            echo "GitOps BEFORE UPDATE"
+                            echo "======================================"
+
+                            cat kustomize/overlays/production/kustomization.yaml
+
+                            echo
+                            echo "Updating image tag..."
+
+                            sed -i \
+                            's|newTag:.*|newTag: "'${BUILD_NUMBER}'"|g' \
+                            kustomize/overlays/production/kustomization.yaml
+
+                            echo
+                            echo "======================================"
+                            echo "GitOps AFTER UPDATE"
+                            echo "======================================"
+
+                            cat kustomize/overlays/production/kustomization.yaml
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Commit GitOps') {
+            steps {
+                dir('gitops') {
+
+                    sh '''
+                        git config user.name "Jenkins"
+                        git config user.email "jenkins@localhost"
+
+                        git add kustomize/overlays/production/kustomization.yaml
+
+                        git commit \
+                        -m "Update Mona-Matti image to ${BUILD_NUMBER}"
+                    '''
+                }
+            }
+        }
+
+        stage('Push GitOps') {
+            steps {
+                dir('gitops') {
+
+                    withCredentials([
+                        usernamePassword(
+                            credentialsId: 'github-gitops',
+                            usernameVariable: 'GIT_USER',
+                            passwordVariable: 'GIT_TOKEN'
+                        )
+                    ]) {
+
+                        sh '''
+                            git remote set-url origin \
+                            https://${GIT_USER}:${GIT_TOKEN}@github.com/anshadmtmt-ship-it/mona-matti-gitops.git
+
+                            git push origin main
+                        '''
+                    }
+                }
             }
         }
 
         stage('Archive Kustomize') {
             steps {
-                sh """
+                sh '''
                     tar -czf kustomize-${BUILD_NUMBER}.tar.gz kustomize
-                """
+                '''
             }
         }
 
@@ -117,28 +197,32 @@ pipeline {
                     [$class: 'AmazonWebServicesCredentialsBinding',
                     credentialsId: 'aws-creds']
                 ]) {
-                    sh """
+                    sh '''
                         aws s3 cp \
                         kustomize-${BUILD_NUMBER}.tar.gz \
                         s3://${S3_BUCKET}/
-                    """
+                    '''
                 }
             }
         }
     }
 
     post {
+
         success {
-            echo "====================================="
-            echo "Build Successful"
+            echo "======================================"
+            echo "       CI/CD PIPELINE SUCCESS"
+            echo "======================================"
+            echo "Build Number : ${BUILD_NUMBER}"
             echo "Docker Image : ${DOCKER_IMAGE}:${BUILD_NUMBER}"
-            echo "Kustomize Archive : kustomize-${BUILD_NUMBER}.tar.gz"
-            echo "Uploaded to : s3://${S3_BUCKET}/"
-            echo "====================================="
+            echo "GitOps Repo  : ${GITOPS_REPO}"
+            echo "======================================"
         }
 
         failure {
-            echo "Build Failed"
+            echo "======================================"
+            echo "           PIPELINE FAILED"
+            echo "======================================"
         }
 
         always {
