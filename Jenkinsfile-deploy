@@ -3,112 +3,151 @@ pipeline {
 
     parameters {
         string(
-            name: 'CI_BUILD_NUMBER',
+            name: 'IMAGE_TAG',
             defaultValue: '',
-            description: 'Enter CI Build Number (Example: 43)'
+            description: 'Docker image tag from CI. Example: 57'
         )
     }
 
     environment {
-        S3_BUCKET = "mona-matti-kustomize-artifacts"
-        KUBECONFIG = "/var/lib/jenkins/.kube/config"
+        DOCKER_IMAGE = 'anshadin4k/mona-matti'
+        HELM_REPO    = 'oci://registry-1.docker.io/anshadin4k'
+        ARGOCD_APP   = 'mona-matti'
     }
 
     stages {
 
-        stage('Download Kustomize Artifact') {
+        stage('Validate') {
             steps {
                 script {
-                    if (!params.CI_BUILD_NUMBER?.trim()) {
-                        error("CI_BUILD_NUMBER cannot be empty.")
+                    if (!params.IMAGE_TAG?.trim()) {
+                        error('IMAGE_TAG cannot be empty')
                     }
 
-                    def artifact = "kustomize-${params.CI_BUILD_NUMBER}.tar.gz"
+                    echo "Image: ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                    echo "Chart: 1.0.${IMAGE_TAG}"
+                }
+            }
+        }
 
-                    echo "Downloading ${artifact}"
+        stage('Prepare Helm') {
+            steps {
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    sh '''
+                        rm -rf deploy package
+                        mkdir -p deploy package
 
-                    withCredentials([
-                        [$class: 'AmazonWebServicesCredentialsBinding',
-                        credentialsId: 'aws-creds']
-                    ]) {
-                        sh """
-                            rm -rf deploy
-                            rm -f kustomize-*.tar.gz
+                        echo "$DOCKER_PASS" | helm registry login \
+                            registry-1.docker.io \
+                            -u "$DOCKER_USER" \
+                            --password-stdin
 
-                            mkdir deploy
+                        docker manifest inspect \
+                            ${DOCKER_IMAGE}:${IMAGE_TAG} > /dev/null
 
-                            aws s3 cp \
-                            s3://${S3_BUCKET}/${artifact} \
-                            .
-                        """
+                        helm pull \
+                            ${HELM_REPO}/mona-matti \
+                            --untar \
+                            --untardir deploy
+
+                        cd deploy/mona-matti
+
+                        sed -i "s/^version:.*/version: 1.0.${IMAGE_TAG}/" Chart.yaml
+                        sed -i "s/^appVersion:.*/appVersion: \\"${IMAGE_TAG}\\"/" Chart.yaml
+                        sed -i "s/^  tag:.*/  tag: \\"${IMAGE_TAG}\\"/" values.yaml
+
+                        helm lint .
+
+                        helm package . \
+                            --destination ../../package
+                    '''
+                }
+            }
+        }
+
+        stage('Push Helm Chart') {
+            steps {
+                sh '''
+                    helm push \
+                        package/mona-matti-1.0.${IMAGE_TAG}.tgz \
+                        ${HELM_REPO}
+                '''
+            }
+        }
+
+        stage('Deploy with ArgoCD') {
+            steps {
+                withCredentials([
+                    string(
+                        credentialsId: 'argocd-token',
+                        variable: 'ARGOCD_AUTH_TOKEN'
+                    )
+                ]) {
+                    withKubeConfig(
+                        credentialsId: 'kubeconfig-prod'
+                    ) {
+                        sh '''
+                            argocd app sync ${ARGOCD_APP} \
+                                --revision 1.0.${IMAGE_TAG} \
+                                --auth-token "$ARGOCD_AUTH_TOKEN" \
+                                --insecure \
+                                --port-forward \
+                                --port-forward-namespace argocd
+
+                            argocd app wait ${ARGOCD_APP} \
+                                --auth-token "$ARGOCD_AUTH_TOKEN" \
+                                --insecure \
+                                --port-forward \
+                                --port-forward-namespace argocd \
+                                --sync \
+                                --health \
+                                --timeout 300
+                        '''
                     }
                 }
             }
         }
 
-        stage('Extract Artifact') {
+        stage('Verify') {
             steps {
-                sh """
-                    tar -xzf kustomize-${params.CI_BUILD_NUMBER}.tar.gz -C deploy
-                """
+                withKubeConfig(
+                    credentialsId: 'kubeconfig-prod'
+                ) {
+                    sh '''
+                        kubectl rollout status \
+                            deployment/mona-matti \
+                            -n production
+
+                        echo "Running image:"
+                        kubectl get deployment mona-matti \
+                            -n production \
+                            -o jsonpath='{.spec.template.spec.containers[0].image}'
+
+                        echo
+                        kubectl get pods -n production
+                    '''
+                }
             }
         }
-
-        stage('Verify Artifact') {
-            steps {
-                sh """
-                    echo "=================================="
-                    echo "Kustomization File"
-                    echo "=================================="
-                    cat deploy/kustomize/overlays/production/kustomization.yaml
-
-                    echo
-                    echo "=================================="
-                    echo "Rendered Image"
-                    echo "=================================="
-                    kubectl kustomize deploy/kustomize/overlays/production | grep image:
-                """
-            }
-        }
-
-        stage('Deploy to Production') {
-            steps {
-                sh """
-                    export KUBECONFIG=${KUBECONFIG}
-
-                    kubectl apply \
-                    -k deploy/kustomize/overlays/production
-                """
-            }
-        }
-
-        stage('Verify Rollout') {
-            steps {
-                sh """
-                    export KUBECONFIG=${KUBECONFIG}
-
-                    kubectl rollout status deployment/mona-matti -n production
-                """
-            }
-        }
-
     }
 
     post {
-
         success {
-            echo "========================================"
-            echo "Deployment Successful"
-            echo "Environment : production"
-            echo "Build Number: ${params.CI_BUILD_NUMBER}"
-            echo "========================================"
+            echo "Deployment successful: ${DOCKER_IMAGE}:${IMAGE_TAG}"
         }
 
         failure {
-            echo "Deployment Failed"
+            echo "Deployment failed"
         }
 
         always {
+            helm registry logout registry-1.docker.io || true
             cleanWs()
         }
     }
