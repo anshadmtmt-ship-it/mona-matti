@@ -24,8 +24,8 @@ pipeline {
                         error('IMAGE_TAG cannot be empty')
                     }
 
-                    echo "Image: ${DOCKER_IMAGE}:${IMAGE_TAG}"
-                    echo "Chart: 1.0.${IMAGE_TAG}"
+                    echo "Docker Image: ${DOCKER_IMAGE}:${IMAGE_TAG}"
+                    echo "Helm Chart: 1.0.${IMAGE_TAG}"
                 }
             }
         }
@@ -45,12 +45,14 @@ pipeline {
 
                         echo "$DOCKER_PASS" | helm registry login \
                             registry-1.docker.io \
-                            -u "$DOCKER_USER" \
+                            --username "$DOCKER_USER" \
                             --password-stdin
 
+                        echo "Checking Docker image..."
                         docker manifest inspect \
                             ${DOCKER_IMAGE}:${IMAGE_TAG} > /dev/null
 
+                        echo "Pulling Helm chart..."
                         helm pull \
                             ${HELM_REPO}/mona-matti \
                             --untar \
@@ -58,12 +60,24 @@ pipeline {
 
                         cd deploy/mona-matti
 
-                        sed -i "s/^version:.*/version: 1.0.${IMAGE_TAG}/" Chart.yaml
-                        sed -i "s/^appVersion:.*/appVersion: \\"${IMAGE_TAG}\\"/" Chart.yaml
-                        sed -i "s/^  tag:.*/  tag: \\"${IMAGE_TAG}\\"/" values.yaml
+                        echo "Updating Helm chart..."
 
+                        sed -i \
+                            "s/^version:.*/version: 1.0.${IMAGE_TAG}/" \
+                            Chart.yaml
+
+                        sed -i \
+                            "s/^appVersion:.*/appVersion: \\"${IMAGE_TAG}\\"/" \
+                            Chart.yaml
+
+                        sed -i \
+                            "s/^  tag:.*/  tag: \\"${IMAGE_TAG}\\"/" \
+                            values.yaml
+
+                        echo "Linting Helm chart..."
                         helm lint .
 
+                        echo "Packaging Helm chart..."
                         helm package . \
                             --destination ../../package
                     '''
@@ -74,6 +88,8 @@ pipeline {
         stage('Push Helm Chart') {
             steps {
                 sh '''
+                    echo "Pushing Helm chart..."
+
                     helm push \
                         package/mona-matti-1.0.${IMAGE_TAG}.tgz \
                         ${HELM_REPO}
@@ -93,12 +109,16 @@ pipeline {
                         credentialsId: 'kubeconfig-prod'
                     ) {
                         sh '''
+                            echo "Syncing ArgoCD..."
+
                             argocd app sync ${ARGOCD_APP} \
                                 --revision 1.0.${IMAGE_TAG} \
                                 --auth-token "$ARGOCD_AUTH_TOKEN" \
                                 --insecure \
                                 --port-forward \
                                 --port-forward-namespace argocd
+
+                            echo "Waiting for application..."
 
                             argocd app wait ${ARGOCD_APP} \
                                 --auth-token "$ARGOCD_AUTH_TOKEN" \
@@ -120,6 +140,8 @@ pipeline {
                     credentialsId: 'kubeconfig-prod'
                 ) {
                     sh '''
+                        echo "Checking deployment..."
+
                         kubectl rollout status \
                             deployment/mona-matti \
                             -n production
@@ -130,6 +152,7 @@ pipeline {
                             -o jsonpath='{.spec.template.spec.containers[0].image}'
 
                         echo
+                        echo "Pods:"
                         kubectl get pods -n production
                     '''
                 }
@@ -147,7 +170,7 @@ pipeline {
         }
 
         always {
-            helm registry logout registry-1.docker.io || true
+            sh 'helm registry logout registry-1.docker.io || true'
             cleanWs()
         }
     }
