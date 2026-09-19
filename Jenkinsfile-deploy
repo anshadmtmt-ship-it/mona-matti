@@ -5,7 +5,7 @@ pipeline {
         string(
             name: 'IMAGE_TAG',
             defaultValue: '',
-            description: 'Docker image tag from CI. Example: 57'
+            description: 'Docker image tag. Example: 60'
         )
     }
 
@@ -24,8 +24,7 @@ pipeline {
                         error('IMAGE_TAG cannot be empty')
                     }
 
-                    echo "Docker Image: ${DOCKER_IMAGE}:${IMAGE_TAG}"
-                    echo "Helm Chart: 1.0.${IMAGE_TAG}"
+                    echo "Image: ${DOCKER_IMAGE}:${IMAGE_TAG}"
                 }
             }
         }
@@ -40,6 +39,8 @@ pipeline {
                     )
                 ]) {
                     sh '''
+                        set -e
+
                         rm -rf deploy package
                         mkdir -p deploy package
 
@@ -52,18 +53,37 @@ pipeline {
                         docker manifest inspect \
                             ${DOCKER_IMAGE}:${IMAGE_TAG} > /dev/null
 
+                        echo "Getting latest Helm chart version..."
+                        CURRENT_CHART=$(helm show chart \
+                            ${HELM_REPO}/mona-matti 2>/dev/null |
+                            awk '$1=="version:" {print $2}')
+
+                        echo "Current chart: ${CURRENT_CHART}"
+
+                        MAJOR=$(echo ${CURRENT_CHART} | cut -d. -f1)
+                        MINOR=$(echo ${CURRENT_CHART} | cut -d. -f2)
+                        PATCH=$(echo ${CURRENT_CHART} | cut -d. -f3)
+
+                        CHART_VERSION="${MAJOR}.${MINOR}.$((PATCH + 1))"
+
+                        echo "New chart: ${CHART_VERSION}"
+
+                        echo "${CHART_VERSION}" > chart-version.txt
+
                         echo "Pulling Helm chart..."
+
                         helm pull \
                             ${HELM_REPO}/mona-matti \
+                            --version ${CURRENT_CHART} \
                             --untar \
                             --untardir deploy
 
                         cd deploy/mona-matti
 
-                        echo "Updating Helm chart..."
+                        echo "Updating chart..."
 
                         sed -i \
-                            "s/^version:.*/version: 1.0.${IMAGE_TAG}/" \
+                            "s/^version:.*/version: ${CHART_VERSION}/" \
                             Chart.yaml
 
                         sed -i \
@@ -74,10 +94,19 @@ pipeline {
                             "s/^  tag:.*/  tag: \\"${IMAGE_TAG}\\"/" \
                             values.yaml
 
-                        echo "Linting Helm chart..."
+                        echo "Chart version:"
+                        grep '^version:' Chart.yaml
+
+                        echo "App version:"
+                        grep '^appVersion:' Chart.yaml
+
+                        echo "Image:"
+                        grep -A3 '^image:' values.yaml
+
+                        echo "Linting..."
                         helm lint .
 
-                        echo "Packaging Helm chart..."
+                        echo "Packaging..."
                         helm package . \
                             --destination ../../package
                     '''
@@ -87,13 +116,30 @@ pipeline {
 
         stage('Push Helm Chart') {
             steps {
-                sh '''
-                    echo "Pushing Helm chart..."
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    sh '''
+                        set -e
 
-                    helm push \
-                        package/mona-matti-1.0.${IMAGE_TAG}.tgz \
-                        ${HELM_REPO}
-                '''
+                        echo "$DOCKER_PASS" | helm registry login \
+                            registry-1.docker.io \
+                            --username "$DOCKER_USER" \
+                            --password-stdin
+
+                        CHART_VERSION=$(cat chart-version.txt)
+
+                        echo "Pushing Helm chart ${CHART_VERSION}..."
+
+                        helm push \
+                            package/mona-matti-${CHART_VERSION}.tgz \
+                            ${HELM_REPO}
+                    '''
+                }
             }
         }
 
@@ -109,16 +155,20 @@ pipeline {
                         credentialsId: 'kubeconfig-prod'
                     ) {
                         sh '''
-                            echo "Syncing ArgoCD..."
+                            set -e
+
+                            CHART_VERSION=$(cat chart-version.txt)
+
+                            echo "Deploying chart ${CHART_VERSION}..."
 
                             argocd app sync ${ARGOCD_APP} \
-                                --revision 1.0.${IMAGE_TAG} \
+                                --revision ${CHART_VERSION} \
                                 --auth-token "$ARGOCD_AUTH_TOKEN" \
                                 --insecure \
                                 --port-forward \
                                 --port-forward-namespace argocd
 
-                            echo "Waiting for application..."
+                            echo "Waiting for ArgoCD sync..."
 
                             argocd app wait ${ARGOCD_APP} \
                                 --auth-token "$ARGOCD_AUTH_TOKEN" \
@@ -126,34 +176,32 @@ pipeline {
                                 --port-forward \
                                 --port-forward-namespace argocd \
                                 --sync \
-                                --health \
-                                --timeout 300
+                                --timeout 180
                         '''
                     }
                 }
             }
         }
 
-        stage('Verify') {
+        stage('Verify Rollout') {
             steps {
                 withKubeConfig(
                     credentialsId: 'kubeconfig-prod'
                 ) {
                     sh '''
-                        echo "Checking deployment..."
-
-                        kubectl rollout status \
-                            deployment/mona-matti \
+                        echo "Rollout status:"
+                        kubectl argo rollouts get rollout \
+                            mona-matti \
                             -n production
 
-                        echo "Running image:"
-                        kubectl get deployment mona-matti \
-                            -n production \
-                            -o jsonpath='{.spec.template.spec.containers[0].image}'
-
-                        echo
                         echo "Pods:"
                         kubectl get pods -n production
+
+                        echo "Services:"
+                        kubectl get svc \
+                            mona-matti-stable \
+                            mona-matti-canary \
+                            -n production
                     '''
                 }
             }
@@ -162,7 +210,7 @@ pipeline {
 
     post {
         success {
-            echo "Deployment successful: ${DOCKER_IMAGE}:${IMAGE_TAG}"
+            echo "Deployment completed for image ${DOCKER_IMAGE}:${IMAGE_TAG}"
         }
 
         failure {
